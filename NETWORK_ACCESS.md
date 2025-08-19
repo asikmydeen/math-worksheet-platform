@@ -29,13 +29,12 @@ Edit your `.env` file and update these values with your computer's IP address:
 
 ```env
 # Replace YOUR_IP with your actual IP address
-REACT_APP_API_URL=http://YOUR_IP:5000/api
+REACT_APP_API_URL=http://YOUR_IP:5001/api
 CLIENT_URL=http://YOUR_IP,http://localhost
 ```
-
 For example, if your IP is `192.168.1.100`:
 ```env
-REACT_APP_API_URL=http://192.168.1.100:5000/api
+REACT_APP_API_URL=http://192.168.1.100:5001/api
 CLIENT_URL=http://192.168.1.100,http://localhost
 ```
 
@@ -69,15 +68,13 @@ If you can't access the application from other devices, you may need to allow th
 ```bash
 # Run as Administrator
 netsh advfirewall firewall add rule name="Math Platform Frontend" dir=in action=allow protocol=TCP localport=80
-netsh advfirewall firewall add rule name="Math Platform Backend" dir=in action=allow protocol=TCP localport=5000
+netsh advfirewall firewall add rule name="Math Platform Backend" dir=in action=allow protocol=TCP localport=5001
 ```
-
 ### Linux (Ubuntu/Debian)
 ```bash
 sudo ufw allow 80/tcp
-sudo ufw allow 5000/tcp
+sudo ufw allow 5001/tcp
 ```
-
 ## Advanced Configuration
 
 ### Using a Custom Domain
@@ -87,8 +84,8 @@ You can set up a local domain name instead of using IP addresses:
 1. Edit `/etc/hosts` (macOS/Linux) or `C:\Windows\System32\drivers\etc\hosts` (Windows)
 2. Add: `YOUR_IP mathplatform.local`
 3. Update `.env`:
-   ```env
-   REACT_APP_API_URL=http://mathplatform.local:5000/api
+```env
+   REACT_APP_API_URL=http://mathplatform.local:5001/api
    CLIENT_URL=http://mathplatform.local,http://localhost
    ```
 
@@ -101,7 +98,7 @@ If your computer has multiple network interfaces (e.g., WiFi and Ethernet), make
 ### Can't connect from other devices?
 
 1. **Check IP address:** Make sure you're using the correct IP address
-2. **Check firewall:** Ensure ports 80 and 5000 are open
+2. **Check firewall:** Ensure ports 80 and 5001 are open
 3. **Check Docker:** Verify containers are running: `docker-compose ps`
 4. **Check same network:** Ensure all devices are on the same network
 5. **Try ping:** From another device, try: `ping YOUR_IP`
@@ -110,7 +107,7 @@ If your computer has multiple network interfaces (e.g., WiFi and Ethernet), make
 
 1. Check the browser console for errors
 2. Verify `REACT_APP_API_URL` is set correctly
-3. Try accessing the API directly: `http://YOUR_IP:5000/health`
+3. Try accessing the API directly: `http://YOUR_IP:5001/health`
 
 ### CORS errors?
 

@@ -113,8 +113,10 @@ docker-compose down
 ### 4. Access the application
 
 - **Frontend**: http://localhost
-- **Backend API**: http://localhost:5000
-- **MongoDB**: localhost:27017 (if you need direct DB access)
+- **Backend API**: http://localhost:5001
+- **MongoDB**: localhost:27018 (if you need direct DB access)
+
+> **Note**: We use ports 5001 and 27018 to avoid conflicts with common services
 
 ### 5. Default login (for demo)
 
