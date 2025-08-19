@@ -1,0 +1,145 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* Custom print styles */
+@media print {
+  /* Hide everything except worksheet content */
+  body * {
+    visibility: hidden;
+  }
+  
+  .worksheet-container, .worksheet-container * {
+    visibility: visible;
+  }
+  
+  .worksheet-container {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    max-width: none;
+    padding: 0.5in;
+    margin: 0;
+    background: white;
+  }
+  
+  /* Hide non-printable elements */
+  .no-print {
+    display: none !important;
+  }
+  
+  /* Prevent page breaks inside problems */
+  .problem-item {
+    page-break-inside: avoid;
+    margin-bottom: 1.5rem;
+  }
+  
+  /* Style input fields for printing */
+  input[type="text"] {
+    border: none !important;
+    border-bottom: 2px solid #000 !important;
+    background: transparent !important;
+    padding: 0 !important;
+  }
+  
+  /* Work space lines */
+  .work-space div {
+    border-bottom: 1px solid #333 !important;
+    height: 3rem !important;
+  }
+  
+  /* Header styling */
+  .worksheet-header {
+    margin-bottom: 2rem;
+  }
+  
+  .worksheet-header h1 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  /* Remove shadows and rounded corners */
+  .worksheet-container {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+  
+  /* Instructions box */
+  .worksheet-instructions {
+    border: 1px solid #000 !important;
+    background: transparent !important;
+    padding: 0.75rem !important;
+  }
+  
+  /* Problem numbering */
+  .problem-number {
+    font-size: 1.25rem;
+    font-weight: bold;
+  }
+  
+  /* Answer line styling */
+  .answer-line input {
+    width: 100%;
+    font-size: 1.125rem;
+  }
+  
+  /* Footer */
+  .worksheet-footer {
+    font-size: 0.875rem;
+    color: #666;
+    border-top: 1px solid #ccc;
+    padding-top: 1rem;
+    margin-top: 3rem;
+  }
+  
+  /* Page setup */
+  @page {
+    size: letter;
+    margin: 0.5in;
+  }
+}
+
+/* Non-print worksheet styles */
+.worksheet-container {
+  font-family: 'Times New Roman', Times, serif;
+}
+
+.worksheet-container h1 {
+  font-family: 'Arial', sans-serif;
+}
+
+.problem-question {
+  line-height: 1.6;
+}
+
+/* Interactive elements for screen */
+@media screen {
+  .work-space {
+    position: relative;
+  }
+  
+  .work-space::before {
+    content: "Show your work here:";
+    position: absolute;
+    top: -1.25rem;
+    left: 0;
+    font-size: 0.875rem;
+    color: #666;
+    font-style: italic;
+  }
+}
