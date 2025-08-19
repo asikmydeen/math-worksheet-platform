@@ -53,6 +53,8 @@ A comprehensive web application for generating, solving, and tracking math works
 - Git for version control
 - (Optional) Node.js 18+ for local development
 
+> **Network Access:** Need to access from other devices? See [NETWORK_ACCESS.md](NETWORK_ACCESS.md)
+
 ## Quick Start
 
 ### 1. Clone the repository
