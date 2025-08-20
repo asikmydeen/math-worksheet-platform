@@ -1,5 +1,6 @@
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const User = require('../models/User');
 const { googleCallback } = require('../controllers/authController');
 
 passport.use(
@@ -7,7 +8,9 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: '/api/auth/google/callback'
+      callbackURL: process.env.NODE_ENV === 'production' 
+        ? 'https://worksheets.personalpod.net/api/auth/google/callback'
+        : '/api/auth/google/callback'
     },
     googleCallback
   )
