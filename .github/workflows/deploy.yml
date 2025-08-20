@@ -28,13 +28,16 @@ jobs:
           # Restore .env (to preserve API keys)
           cp .env.backup .env
           
-          # Build and restart services
-          docker-compose build
-          docker-compose down
-          docker-compose up -d
+          # Build Docker images
+          docker build -t math-worksheet-platform-backend:latest ./backend
+          docker build -t math-worksheet-platform-frontend:latest --build-arg REACT_APP_API_URL=/api ./frontend
+          
+          # Restart services using production compose file
+          docker-compose -f docker-compose.prod.yml down
+          docker-compose -f docker-compose.prod.yml up -d
           
           # Check if services are healthy
           sleep 10
-          docker-compose ps
+          docker-compose -f docker-compose.prod.yml ps
           
           echo "Deployment completed!"
