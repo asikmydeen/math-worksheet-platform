@@ -32,11 +32,7 @@ exports.protect = async (req, res, next) => {
       }
 
       // Grant access
-      req.user = {
-        id: user._id.toString(),
-        email: user.email,
-        role: user.role
-      };
+      req.user = user;
       
       next();
     } catch (error) {

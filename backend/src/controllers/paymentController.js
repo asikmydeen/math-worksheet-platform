@@ -30,8 +30,19 @@ exports.createCheckoutSession = catchAsync(async (req, res, next) => {
     return next(new AppError('Invalid plan selected', 400));
   }
 
+  // Ensure subscription object exists
+  if (!user.subscription) {
+    user.subscription = {
+      plan: 'free',
+      aiRequestsUsed: 0,
+      aiRequestsLimit: 10,
+      resetDate: new Date(),
+      subscriptionStatus: 'active'
+    };
+  }
+
   // Create or retrieve Stripe customer
-  let customerId = user.subscription.stripeCustomerId;
+  let customerId = user.subscription?.stripeCustomerId;
   
   if (!customerId) {
     const customer = await getStripe().customers.create({
@@ -43,6 +54,9 @@ exports.createCheckoutSession = catchAsync(async (req, res, next) => {
     });
     
     customerId = customer.id;
+    if (!user.subscription) {
+      user.subscription = {};
+    }
     user.subscription.stripeCustomerId = customerId;
     await user.save();
   }

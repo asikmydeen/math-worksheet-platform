@@ -60,4 +60,4 @@ mongodb_data/
 
 # Temporary files
 tmp/
-temp/
+temp/deployment-package.tar.gz
