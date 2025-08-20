@@ -89,6 +89,16 @@ router.get('/google/callback',
 router.get('/me', protect, getMe);
 router.put('/profile', protect, updateProfile);
 
+// Debug endpoint to check setup status
+router.get('/debug/setup-status', protect, (req, res) => {
+  res.json({
+    userId: req.user.id,
+    needsSetup: !req.user.hasSetupKidProfiles,
+    hasSetupKidProfiles: req.user.hasSetupKidProfiles,
+    activeKidProfile: req.user.activeKidProfile
+  });
+});
+
 // Admin routes for email management
 router.post('/admin/emails', protect, addAllowedEmails);
 router.get('/admin/emails', protect, getAllowedEmails);

@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 require('dotenv').config();
 
 const User = require('../src/models/User');
+const KidProfile = require('../src/models/KidProfile');
 
 async function debugUserSetup() {
   try {

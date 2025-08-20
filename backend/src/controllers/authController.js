@@ -42,7 +42,10 @@ exports.googleCallback = async (accessToken, refreshToken, profile, done) => {
         name: profile.displayName,
         avatar: profile.photos[0]?.value,
         accessLevel: allowedEmail.accessLevel || 'basic',
-        grade: '5' // Default grade
+        role: 'parent',
+        grade: '5', // Default grade
+        hasSetupKidProfiles: false,
+        activeKidProfile: null
       });
       await user.save();
     } else {
@@ -51,6 +54,18 @@ exports.googleCallback = async (accessToken, refreshToken, profile, done) => {
       user.avatar = profile.photos[0]?.value;
       user.accessLevel = allowedEmail.accessLevel || user.accessLevel;
       user.lastLogin = new Date();
+      
+      // Ensure existing users have the right default values
+      if (user.hasSetupKidProfiles === undefined || user.hasSetupKidProfiles === null) {
+        user.hasSetupKidProfiles = false;
+      }
+      if (!user.role) {
+        user.role = 'parent';
+      }
+      if (!user.activeKidProfile) {
+        user.activeKidProfile = null;
+      }
+      
       await user.save();
     }
 
@@ -80,7 +95,7 @@ exports.getMe = async (req, res) => {
       });
     }
 
-    res.json({
+    const responseData = {
       success: true,
       user: {
         id: user._id,
@@ -95,7 +110,14 @@ exports.getMe = async (req, res) => {
         stats: user.stats,
         subscription: user.subscription
       }
+    };
+
+    console.log('GET /me response for', user.email, ':', {
+      hasSetupKidProfiles: user.hasSetupKidProfiles,
+      activeKidProfile: user.activeKidProfile
     });
+
+    res.json(responseData);
   } catch (error) {
     console.error('Get user error:', error);
     res.status(500).json({
