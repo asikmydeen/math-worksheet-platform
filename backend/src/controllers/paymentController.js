@@ -1,6 +1,5 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const User = require('../models/User');
-const AllowedEmail = require('../models/AllowedEmail');
 const AppError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
 
@@ -112,20 +111,6 @@ exports.handlePaymentSuccess = catchAsync(async (req, res, next) => {
   user.subscription.resetDate = new Date();
   
   await user.save();
-
-  // Add user to allowed emails if not already there
-  const existingAllowedEmail = await AllowedEmail.findOne({ email: user.email });
-  if (!existingAllowedEmail) {
-    await AllowedEmail.create({
-      email: user.email,
-      accessLevel: 'premium',
-      addedBy: user._id,
-      reason: `Paid ${plan} subscription`
-    });
-  } else {
-    existingAllowedEmail.accessLevel = 'premium';
-    await existingAllowedEmail.save();
-  }
 
   res.status(200).json({
     status: 'success',
