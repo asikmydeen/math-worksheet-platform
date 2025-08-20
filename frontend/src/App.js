@@ -35,19 +35,26 @@ function App() {
   const fetchUserInfo = async () => {
     try {
       const response = await api.get('/auth/me');
-      setUser(response.data.user);
+      console.log('Full /me response:', response.data);
       
-      // Check if user has setup kid profiles
-      console.log('User data:', response.data.user);
-      console.log('hasSetupKidProfiles:', response.data.user.hasSetupKidProfiles);
-      
-      if (!response.data.user.hasSetupKidProfiles) {
-        console.log('Setting needsProfileSetup to true');
-        setNeedsProfileSetup(true);
+      if (response.data.success && response.data.user) {
+        setUser(response.data.user);
+        
+        // Check if user has setup kid profiles
+        console.log('User data:', response.data.user);
+        console.log('hasSetupKidProfiles:', response.data.user.hasSetupKidProfiles);
+        
+        if (!response.data.user.hasSetupKidProfiles) {
+          console.log('Setting needsProfileSetup to true');
+          setNeedsProfileSetup(true);
+        } else {
+          console.log('User has setup profiles, fetching active profile');
+          // Fetch active kid profile
+          await fetchActiveProfile();
+        }
       } else {
-        console.log('User has setup profiles, fetching active profile');
-        // Fetch active kid profile
-        await fetchActiveProfile();
+        console.error('Invalid response structure from /me endpoint');
+        logout();
       }
     } catch (error) {
       console.error('Auth error:', error);
@@ -114,13 +121,22 @@ function App() {
     // Fetch user info with the new token
     try {
       const response = await api.get('/auth/me');
-      setUser(response.data.user);
+      console.log('loginWithToken /me response:', response.data);
       
-      // Check if user needs profile setup
-      if (!response.data.user.hasSetupKidProfiles) {
-        setNeedsProfileSetup(true);
+      if (response.data.success && response.data.user) {
+        setUser(response.data.user);
+        
+        // Check if user needs profile setup
+        if (!response.data.user.hasSetupKidProfiles) {
+          console.log('loginWithToken: Setting needsProfileSetup to true');
+          setNeedsProfileSetup(true);
+        } else {
+          await fetchActiveProfile();
+        }
       } else {
-        await fetchActiveProfile();
+        console.error('Invalid response structure from /me endpoint in loginWithToken');
+        logout();
+        return { success: false };
       }
       
       return { success: true };
