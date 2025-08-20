@@ -22,7 +22,9 @@ jobs:
           # Backup current .env
           cp .env .env.backup
           
-          # Pull latest code
+          # Clean untracked files and pull latest code
+          git clean -fd
+          git reset --hard
           git pull origin main
           
           # Restore .env (to preserve API keys)
