@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import WorksheetGenerator from '../components/WorksheetGenerator';
 import api from '../services/api';
+import { useTheme } from '../contexts/ThemeContext';
+import { useDarkModeClasses } from '../components/DarkModeWrapper';
 import { 
   Plus, 
   FileText, 
@@ -22,6 +24,8 @@ import {
 
 function Worksheets() {
   const navigate = useNavigate();
+  const { isDarkMode } = useTheme();
+  const darkMode = useDarkModeClasses();
   const [worksheets, setWorksheets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showGenerator, setShowGenerator] = useState(false);
@@ -123,7 +127,7 @@ function Worksheets() {
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading worksheets...</p>
+            <p className={`mt-4 ${darkMode.textSecondary}`}>Loading worksheets...</p>
           </div>
         </div>
       </Layout>
@@ -136,8 +140,8 @@ function Worksheets() {
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">My Worksheets</h1>
-            <p className="text-gray-600 mt-1">Manage and review all your math worksheets</p>
+            <h1 className={`text-2xl font-bold ${darkMode.text}`}>My Worksheets</h1>
+            <p className={`mt-1 ${darkMode.textSecondary}`}>Manage and review all your math worksheets</p>
           </div>
           <button
             onClick={() => setShowGenerator(true)}
@@ -150,21 +154,21 @@ function Worksheets() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl p-4 shadow-sm">
+          <div className={`${darkMode.card} rounded-xl p-4 shadow-sm`}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total</p>
-                <p className="text-2xl font-bold text-gray-800">{worksheets.length}</p>
+                <p className={`text-sm ${darkMode.textSecondary}`}>Total</p>
+                <p className={`text-2xl font-bold ${darkMode.text}`}>{worksheets.length}</p>
               </div>
               <FileText className="w-8 h-8 text-purple-500" />
             </div>
           </div>
           
-          <div className="bg-white rounded-xl p-4 shadow-sm">
+          <div className={`${darkMode.card} rounded-xl p-4 shadow-sm`}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Completed</p>
-                <p className="text-2xl font-bold text-gray-800">
+                <p className={`text-sm ${darkMode.textSecondary}`}>Completed</p>
+                <p className={`text-2xl font-bold ${darkMode.text}`}>
                   {worksheets.filter(w => w.status === 'completed').length}
                 </p>
               </div>
@@ -172,11 +176,11 @@ function Worksheets() {
             </div>
           </div>
           
-          <div className="bg-white rounded-xl p-4 shadow-sm">
+          <div className={`${darkMode.card} rounded-xl p-4 shadow-sm`}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">In Progress</p>
-                <p className="text-2xl font-bold text-gray-800">
+                <p className={`text-sm ${darkMode.textSecondary}`}>In Progress</p>
+                <p className={`text-2xl font-bold ${darkMode.text}`}>
                   {worksheets.filter(w => w.status === 'in-progress').length}
                 </p>
               </div>
@@ -184,11 +188,11 @@ function Worksheets() {
             </div>
           </div>
           
-          <div className="bg-white rounded-xl p-4 shadow-sm">
+          <div className={`${darkMode.card} rounded-xl p-4 shadow-sm`}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Avg Score</p>
-                <p className="text-2xl font-bold text-gray-800">
+                <p className={`text-sm ${darkMode.textSecondary}`}>Avg Score</p>
+                <p className={`text-2xl font-bold ${darkMode.text}`}>
                   {worksheets.filter(w => w.score !== null).length > 0
                     ? Math.round(
                         worksheets
@@ -205,7 +209,7 @@ function Worksheets() {
         </div>
 
         {/* Filters and Search */}
-        <div className="bg-white rounded-xl shadow-sm p-4">
+        <div className={`${darkMode.card} rounded-xl shadow-sm p-4`}>
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
@@ -215,7 +219,7 @@ function Worksheets() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search worksheets..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
+                  className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:border-purple-500 ${darkMode.input}`}
                 />
               </div>
             </div>
@@ -223,7 +227,7 @@ function Worksheets() {
             <select
               value={filterGrade}
               onChange={(e) => setFilterGrade(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
+              className={`px-4 py-2 border rounded-lg focus:outline-none focus:border-purple-500 ${darkMode.input}`}
             >
               <option value="all">All Grades</option>
               <option value="K">Kindergarten</option>
@@ -235,7 +239,7 @@ function Worksheets() {
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
+              className={`px-4 py-2 border rounded-lg focus:outline-none focus:border-purple-500 ${darkMode.input}`}
             >
               <option value="all">All Status</option>
               <option value="completed">Completed</option>
@@ -246,7 +250,7 @@ function Worksheets() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
+              className={`px-4 py-2 border rounded-lg focus:outline-none focus:border-purple-500 ${darkMode.input}`}
             >
               <option value="createdAt">Newest First</option>
               <option value="score">Highest Score</option>
@@ -256,12 +260,12 @@ function Worksheets() {
         </div>
 
         {/* Worksheets List */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className={`${darkMode.card} rounded-xl shadow-sm overflow-hidden`}>
           {filteredWorksheets.length === 0 ? (
             <div className="text-center py-12">
               <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg mb-2">No worksheets found</p>
-              <p className="text-gray-400 mb-6">Create your first worksheet to get started!</p>
+              <p className={`${darkMode.textSecondary} text-lg mb-2`}>No worksheets found</p>
+              <p className={`${darkMode.textMuted} mb-6`}>Create your first worksheet to get started!</p>
               <button
                 onClick={() => setShowGenerator(true)}
                 className="px-6 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600"
@@ -272,40 +276,40 @@ function Worksheets() {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 border-b">
+                <thead className={`border-b ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50'}`}>
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode.textMuted}`}>
                       Status
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode.textMuted}`}>
                       Title
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode.textMuted}`}>
                       Subject
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode.textMuted}`}>
                       Grade
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode.textMuted}`}>
                       Topics
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode.textMuted}`}>
                       Problems
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode.textMuted}`}>
                       Score
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode.textMuted}`}>
                       Date
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode.textMuted}`}>
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className={`divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
                   {filteredWorksheets.map((worksheet) => (
-                    <tr key={worksheet._id} className="hover:bg-gray-50">
+                    <tr key={worksheet._id} className={`${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'}`}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {getStatusIcon(worksheet.status)}
                       </td>
@@ -317,7 +321,7 @@ function Worksheets() {
                           {worksheet.title}
                         </Link>
                         {worksheet.description && (
-                          <p className="text-sm text-gray-500 mt-1">{worksheet.description}</p>
+                          <p className={`text-sm ${darkMode.textSecondary} mt-1`}>{worksheet.description}</p>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -326,7 +330,7 @@ function Worksheets() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-gray-900">Grade {worksheet.grade}</span>
+                        <span className={`text-sm ${darkMode.text}`}>Grade {worksheet.grade}</span>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-wrap gap-1">
@@ -343,7 +347,7 @@ function Worksheets() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-gray-900">
+                        <span className={`text-sm ${darkMode.text}`}>
                           {worksheet.problems?.length || worksheet.problemCount || 0}
                         </span>
                       </td>
@@ -359,11 +363,11 @@ function Worksheets() {
                             </span>
                           </div>
                         ) : (
-                          <span className="text-sm text-gray-400">-</span>
+                          <span className={`text-sm ${darkMode.textMuted}`}>-</span>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-gray-500">
+                        <span className={`text-sm ${darkMode.textSecondary}`}>
                           {formatDate(worksheet.createdAt)}
                         </span>
                       </td>
@@ -416,7 +420,7 @@ function Worksheets() {
             <button
               onClick={() => setPage(Math.max(1, page - 1))}
               disabled={page === 1}
-              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+              className={`px-4 py-2 border rounded-lg disabled:opacity-50 ${darkMode.buttonSecondary}`}
             >
               Previous
             </button>
@@ -428,7 +432,7 @@ function Worksheets() {
                 className={`px-4 py-2 rounded-lg ${
                   page === i + 1
                     ? 'bg-purple-500 text-white'
-                    : 'border border-gray-300 hover:bg-gray-50'
+                    : `border ${darkMode.buttonSecondary}`
                 }`}
               >
                 {i + 1}
@@ -438,7 +442,7 @@ function Worksheets() {
             <button
               onClick={() => setPage(Math.min(totalPages, page + 1))}
               disabled={page === totalPages}
-              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+              className={`px-4 py-2 border rounded-lg disabled:opacity-50 ${darkMode.buttonSecondary}`}
             >
               Next
             </button>

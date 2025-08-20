@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import api from '../services/api';
+import { useTheme } from '../contexts/ThemeContext';
+import { useDarkModeClasses } from '../components/DarkModeWrapper';
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   AreaChart, Area, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
@@ -13,6 +15,8 @@ import {
 } from 'lucide-react';
 
 function Analytics() {
+  const { isDarkMode } = useTheme();
+  const darkMode = useDarkModeClasses();
   const [loading, setLoading] = useState(true);
   const [analytics, setAnalytics] = useState(null);
   const [timeRange, setTimeRange] = useState('week');
@@ -160,7 +164,7 @@ function Analytics() {
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading analytics...</p>
+            <p className={`mt-4 ${darkMode.textSecondary}`}>Loading analytics...</p>
           </div>
         </div>
       </Layout>
@@ -173,21 +177,33 @@ function Analytics() {
     return `${hours}h ${minutes}m`;
   };
 
+  // Chart theme configuration
+  const chartTheme = {
+    axis: isDarkMode ? '#9ca3af' : '#6b7280',
+    grid: isDarkMode ? '#374151' : '#e5e7eb',
+    text: isDarkMode ? '#d1d5db' : '#374151',
+    tooltip: {
+      backgroundColor: isDarkMode ? '#1f2937' : '#ffffff',
+      borderColor: isDarkMode ? '#374151' : '#e5e7eb',
+      textColor: isDarkMode ? '#d1d5db' : '#374151'
+    }
+  };
+
   if (!hasData && !showDemo && !loading) {
     return (
       <Layout>
         <div className="space-y-6">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-2xl font-bold text-gray-800">Analytics Dashboard</h1>
-              <p className="text-gray-600 mt-1">Track your progress and performance</p>
+              <h1 className={`text-2xl font-bold ${darkMode.text}`}>Analytics Dashboard</h1>
+              <p className={`mt-1 ${darkMode.textSecondary}`}>Track your progress and performance</p>
             </div>
           </div>
           
-          <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+          <div className={`${darkMode.card} rounded-xl shadow-sm p-12 text-center`}>
             <BarChart2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-800 mb-2">No Analytics Data Yet</h2>
-            <p className="text-gray-600 mb-6">
+            <h2 className={`text-xl font-semibold ${darkMode.text} mb-2`}>No Analytics Data Yet</h2>
+            <p className={`${darkMode.textSecondary} mb-6`}>
               Complete some worksheets to start seeing your performance analytics here.
             </p>
             <div className="space-y-3">
@@ -197,7 +213,7 @@ function Analytics() {
               >
                 View Demo Analytics
               </button>
-              <p className="text-sm text-gray-500">
+              <p className={`text-sm ${darkMode.textMuted}`}>
                 See what your analytics dashboard will look like with sample data
               </p>
             </div>
@@ -213,8 +229,8 @@ function Analytics() {
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">Analytics Dashboard</h1>
-            <p className="text-gray-600 mt-1">Track your progress and performance</p>
+            <h1 className={`text-2xl font-bold ${darkMode.text}`}>Analytics Dashboard</h1>
+            <p className={`mt-1 ${darkMode.textSecondary}`}>Track your progress and performance</p>
           </div>
           <div className="flex gap-3">
             <button
@@ -263,7 +279,7 @@ function Analytics() {
           <>
             {/* Key Metrics */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-          <div className="bg-white rounded-xl p-4 shadow-sm">
+          <div className={`${darkMode.card} rounded-xl p-4 shadow-sm`}>
             <div className="flex items-center justify-between mb-2">
               <BookOpen className="w-8 h-8 text-purple-500" />
               <span className="text-xs text-green-600 font-medium flex items-center">
@@ -271,22 +287,22 @@ function Analytics() {
                 12%
               </span>
             </div>
-            <p className="text-2xl font-bold text-gray-800">{analytics.overview.totalWorksheets}</p>
-            <p className="text-sm text-gray-600">Total Worksheets</p>
+            <p className={`text-2xl font-bold ${darkMode.text}`>{analytics.overview.totalWorksheets}</p>
+            <p className={`text-sm ${darkMode.textSecondary}`>Total Worksheets</p>
           </div>
 
-          <div className="bg-white rounded-xl p-4 shadow-sm">
+          <div className={`${darkMode.card} rounded-xl p-4 shadow-sm`}>
             <div className="flex items-center justify-between mb-2">
               <CheckCircle className="w-8 h-8 text-green-500" />
               <span className="text-xs text-green-600 font-medium">
                 {Math.round((analytics.overview.completedWorksheets / analytics.overview.totalWorksheets) * 100)}%
               </span>
             </div>
-            <p className="text-2xl font-bold text-gray-800">{analytics.overview.completedWorksheets}</p>
-            <p className="text-sm text-gray-600">Completed</p>
+            <p className={`text-2xl font-bold ${darkMode.text}`>{analytics.overview.completedWorksheets}</p>
+            <p className={`text-sm ${darkMode.textSecondary}`>Completed</p>
           </div>
 
-          <div className="bg-white rounded-xl p-4 shadow-sm">
+          <div className={`${darkMode.card} rounded-xl p-4 shadow-sm`}>
             <div className="flex items-center justify-between mb-2">
               <Target className="w-8 h-8 text-blue-500" />
               <span className={`text-xs font-medium flex items-center ${
@@ -296,34 +312,34 @@ function Analytics() {
                 {Math.abs(analytics.overview.improvement)}%
               </span>
             </div>
-            <p className="text-2xl font-bold text-gray-800">{analytics.overview.averageScore}%</p>
-            <p className="text-sm text-gray-600">Average Score</p>
+            <p className={`text-2xl font-bold ${darkMode.text}`>{analytics.overview.averageScore}%</p>
+            <p className={`text-sm ${darkMode.textSecondary}`>Average Score</p>
           </div>
 
-          <div className="bg-white rounded-xl p-4 shadow-sm">
+          <div className={`${darkMode.card} rounded-xl p-4 shadow-sm`}>
             <div className="flex items-center justify-between mb-2">
               <Clock className="w-8 h-8 text-orange-500" />
             </div>
-            <p className="text-2xl font-bold text-gray-800">{formatTime(analytics.overview.totalTimeSpent)}</p>
-            <p className="text-sm text-gray-600">Time Spent</p>
+            <p className={`text-2xl font-bold ${darkMode.text}`>{formatTime(analytics.overview.totalTimeSpent)}</p>
+            <p className={`text-sm ${darkMode.textSecondary}`>Time Spent</p>
           </div>
 
-          <div className="bg-white rounded-xl p-4 shadow-sm">
+          <div className={`${darkMode.card} rounded-xl p-4 shadow-sm`}>
             <div className="flex items-center justify-between mb-2">
               <Zap className="w-8 h-8 text-yellow-500" />
             </div>
-            <p className="text-2xl font-bold text-gray-800">{analytics.overview.streak}</p>
-            <p className="text-sm text-gray-600">Day Streak</p>
+            <p className={`text-2xl font-bold ${darkMode.text}`>{analytics.overview.streak}</p>
+            <p className={`text-sm ${darkMode.textSecondary}`>Day Streak</p>
           </div>
 
-          <div className="bg-white rounded-xl p-4 shadow-sm">
+          <div className={`${darkMode.card} rounded-xl p-4 shadow-sm`}>
             <div className="flex items-center justify-between mb-2">
               <Activity className="w-8 h-8 text-purple-500" />
             </div>
-            <p className="text-2xl font-bold text-gray-800">
+            <p className={`text-2xl font-bold ${darkMode.text}`>
               {Math.round(analytics.overview.totalTimeSpent / analytics.overview.completedWorksheets / 60)}
             </p>
-            <p className="text-sm text-gray-600">Avg. Min/Sheet</p>
+            <p className={`text-sm ${darkMode.textSecondary}`>Avg. Min/Sheet</p>
           </div>
         </div>
 
@@ -334,10 +350,16 @@ function Analytics() {
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Performance Trend</h3>
             <ResponsiveContainer width="100%" height={300}>
               <AreaChart data={analytics.performanceByDay}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="day" />
-                <YAxis />
-                <Tooltip />
+                <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
+                <XAxis dataKey="day" stroke={chartTheme.axis} />
+                <YAxis stroke={chartTheme.axis} />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: chartTheme.tooltip.backgroundColor, 
+                    border: `1px solid ${chartTheme.tooltip.borderColor}`,
+                    color: chartTheme.tooltip.textColor 
+                  }} 
+                />
                 <Area type="monotone" dataKey="score" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.3} />
                 <Line type="monotone" dataKey="worksheets" stroke="#ec4899" strokeWidth={2} />
               </AreaChart>
@@ -349,10 +371,16 @@ function Analytics() {
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Topic Performance</h3>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={analytics.topicPerformance} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" />
-                <YAxis dataKey="topic" type="category" width={80} />
-                <Tooltip />
+                <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
+                <XAxis type="number" stroke={chartTheme.axis} />
+                <YAxis dataKey="topic" type="category" width={80} stroke={chartTheme.axis} />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: chartTheme.tooltip.backgroundColor, 
+                    border: `1px solid ${chartTheme.tooltip.borderColor}`,
+                    color: chartTheme.tooltip.textColor 
+                  }} 
+                />
                 <Bar dataKey="score" fill="#8b5cf6">
                   {analytics.topicPerformance.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.score >= 80 ? '#10b981' : entry.score >= 60 ? '#f59e0b' : '#ef4444'} />
@@ -394,11 +422,17 @@ function Analytics() {
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Skills Analysis</h3>
             <ResponsiveContainer width="100%" height={250}>
               <RadarChart data={analytics.skillsRadar}>
-                <PolarGrid />
-                <PolarAngleAxis dataKey="skill" />
-                <PolarRadiusAxis angle={90} domain={[0, 100]} />
+                <PolarGrid stroke={chartTheme.grid} />
+                <PolarAngleAxis dataKey="skill" stroke={chartTheme.axis} />
+                <PolarRadiusAxis angle={90} domain={[0, 100]} stroke={chartTheme.axis} />
                 <Radar name="Score" dataKey="score" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.6} />
-                <Tooltip />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: chartTheme.tooltip.backgroundColor, 
+                    border: `1px solid ${chartTheme.tooltip.borderColor}`,
+                    color: chartTheme.tooltip.textColor 
+                  }} 
+                />
               </RadarChart>
             </ResponsiveContainer>
           </div>
@@ -408,11 +442,11 @@ function Analytics() {
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Activity</h3>
             <div className="space-y-3">
               {analytics.recentActivity.map((activity, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div key={index} className={`flex items-center justify-between p-3 rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
                   <div className="flex items-center space-x-3">
                     <Calendar className="w-5 h-5 text-gray-500" />
                     <div>
-                      <p className="text-sm font-medium text-gray-800">
+                      <p className={`text-sm font-medium ${darkMode.text}`}>
                         {new Date(activity.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                       </p>
                       <p className="text-xs text-gray-600">{activity.worksheets} worksheets</p>
@@ -458,11 +492,11 @@ function Analytics() {
                     )}
                   </div>
                   <h4 className={`font-semibold mb-1 ${
-                    achievement.unlocked ? 'text-gray-800' : 'text-gray-500'
+                    achievement.unlocked ? darkMode.text : darkMode.textMuted
                   }`}>
                     {achievement.name}
                   </h4>
-                  <p className="text-xs text-gray-600">{achievement.description}</p>
+                  <p className={`text-xs ${darkMode.textSecondary}`}>{achievement.description}</p>
                 </div>
               );
             })}
