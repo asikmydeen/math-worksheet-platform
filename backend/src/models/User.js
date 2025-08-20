@@ -1,49 +1,40 @@
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
-const speakeasy = require('speakeasy');
 
 const userSchema = new mongoose.Schema({
-  username: {
+  // Primary identification - now based on email from Google
+  email: {
     type: String,
-    required: [true, 'Please provide a username'],
+    required: [true, 'Please provide an email'],
     unique: true,
-    trim: true,
     lowercase: true,
-    minLength: [3, 'Username must be at least 3 characters'],
-    maxLength: [20, 'Username cannot be more than 20 characters'],
-    match: [/^[a-z0-9_]+$/, 'Username can only contain lowercase letters, numbers, and underscores']
+    trim: true,
+    match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Please provide a valid email']
   },
   name: {
     type: String,
     required: [true, 'Please provide your name'],
     trim: true,
-    maxLength: [50, 'Name cannot be more than 50 characters']
-  },
-  twoFactorSecret: {
-    type: String,
-    required: function() { return !this.googleId; }, // Only required for non-Google users
-    select: false // Don't include in queries by default
+    maxLength: [100, 'Name cannot be more than 100 characters']
   },
   // Google OAuth fields
   googleId: {
     type: String,
-    sparse: true,
+    required: true,
     unique: true
-  },
-  email: {
-    type: String,
-    sparse: true,
-    unique: true,
-    lowercase: true,
-    trim: true
   },
   avatar: {
     type: String
   },
-  authProvider: {
+  // Access control
+  accessLevel: {
     type: String,
-    enum: ['local', 'google'],
-    default: 'local'
+    enum: ['basic', 'premium', 'admin'],
+    default: 'basic'
+  },
+  isActive: {
+    type: Boolean,
+    default: true
   },
   role: {
     type: String,
@@ -53,7 +44,7 @@ const userSchema = new mongoose.Schema({
   grade: {
     type: String,
     enum: ['K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
-    required: function() { return this.role === 'student'; }
+    default: '5'
   },
   preferences: {
     defaultGrade: String,
@@ -94,7 +85,7 @@ const userSchema = new mongoose.Schema({
   subscription: {
     plan: {
       type: String,
-      enum: ['free', 'basic', 'premium'],
+      enum: ['free', 'monthly', 'annual', 'lifetime'],
       default: 'free'
     },
     aiRequestsUsed: {
@@ -103,16 +94,19 @@ const userSchema = new mongoose.Schema({
     },
     aiRequestsLimit: {
       type: Number,
-      default: 50
+      default: 10 // Reduced for free tier
     },
     resetDate: {
       type: Date,
       default: Date.now
+    },
+    stripeCustomerId: String,
+    stripeSubscriptionId: String,
+    subscriptionStatus: {
+      type: String,
+      enum: ['active', 'canceled', 'past_due', 'incomplete'],
+      default: 'active'
     }
-  },
-  isActive: {
-    type: Boolean,
-    default: true
   },
   lastLogin: Date,
   createdAt: {
@@ -124,39 +118,23 @@ const userSchema = new mongoose.Schema({
 });
 
 // Indexes
-userSchema.index({ username: 1 });
+userSchema.index({ email: 1 });
+userSchema.index({ googleId: 1 });
 userSchema.index({ createdAt: -1 });
-
-// Generate 2FA secret
-userSchema.methods.generate2FASecret = function() {
-  const secret = speakeasy.generateSecret({
-    name: `MathWorksheetAI (${this.username})`,
-    length: 32
-  });
-  this.twoFactorSecret = secret.base32;
-  return secret;
-};
-
-// Verify 2FA token
-userSchema.methods.verify2FAToken = function(token) {
-  return speakeasy.totp.verify({
-    secret: this.twoFactorSecret,
-    encoding: 'base32',
-    token: token,
-    window: 2 // Allow 2 time steps tolerance
-  });
-};
+userSchema.index({ accessLevel: 1 });
+userSchema.index({ isActive: 1 });
 
 // Generate JWT token
 userSchema.methods.generateAuthToken = function() {
   return jwt.sign(
     { 
       id: this._id, 
-      username: this.username,
-      role: this.role 
+      email: this.email,
+      role: this.role,
+      accessLevel: this.accessLevel
     },
     process.env.JWT_SECRET,
-    { expiresIn: '7d' }
+    { expiresIn: '30d' } // Extended for better UX
   );
 };
 
@@ -199,18 +177,26 @@ userSchema.methods.checkAIRequestsReset = async function() {
     
     switch(this.subscription.plan) {
       case 'free':
+        this.subscription.aiRequestsLimit = 10;
+        break;
+      case 'monthly':
         this.subscription.aiRequestsLimit = 50;
         break;
-      case 'basic':
-        this.subscription.aiRequestsLimit = 500;
+      case 'annual':
+        this.subscription.aiRequestsLimit = 600;
         break;
-      case 'premium':
-        this.subscription.aiRequestsLimit = -1;
+      case 'lifetime':
+        this.subscription.aiRequestsLimit = -1; // Unlimited
         break;
     }
     
     await this.save();
   }
+};
+
+// Check if user has access
+userSchema.methods.hasAccess = function() {
+  return this.isActive && ['basic', 'premium', 'admin'].includes(this.accessLevel);
 };
 
 const User = mongoose.model('User', userSchema);

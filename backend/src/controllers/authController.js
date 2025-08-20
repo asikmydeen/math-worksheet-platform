@@ -1,183 +1,83 @@
 const User = require('../models/User');
+const AllowedEmail = require('../models/AllowedEmail');
 const jwt = require('jsonwebtoken');
-const QRCode = require('qrcode');
 
-// Register new user with 2FA
-exports.register = async (req, res) => {
+// Google OAuth callback handler
+exports.googleCallback = async (profile, done) => {
   try {
-    const { username, name, role, grade } = req.body;
-
-    // Check if username already exists
-    const existingUser = await User.findOne({ username: username.toLowerCase() });
-    if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        message: 'Username already taken'
+    const email = profile.emails[0].value.toLowerCase();
+    
+    // Check if email is allowed
+    const allowedEmail = await AllowedEmail.isEmailAllowed(email);
+    if (!allowedEmail) {
+      return done(null, false, { 
+        message: 'Access denied. Your email is not authorized to use this platform.' 
       });
     }
 
-    // Create new user
-    const user = new User({
-      username: username.toLowerCase(),
-      name,
-      role: role || 'student',
-      grade: role === 'student' ? grade : undefined
-    });
+    // Check if user already exists
+    let user = await User.findOne({ googleId: profile.id });
+    
+    if (!user) {
+      // Create new user
+      user = new User({
+        googleId: profile.id,
+        email: email,
+        name: profile.displayName,
+        avatar: profile.photos[0]?.value,
+        accessLevel: allowedEmail.accessLevel || 'basic',
+        grade: '5' // Default grade
+      });
+      await user.save();
+    } else {
+      // Update existing user info
+      user.name = profile.displayName;
+      user.avatar = profile.photos[0]?.value;
+      user.accessLevel = allowedEmail.accessLevel || user.accessLevel;
+      user.lastLogin = new Date();
+      await user.save();
+    }
 
-    // Generate 2FA secret
-    const secret = user.generate2FASecret();
-    await user.save();
+    // Track login in allowed email
+    await allowedEmail.trackLogin();
 
-    // Generate QR code for authenticator app
-    const otpauthUrl = secret.otpauth_url;
-    const qrCodeDataUrl = await QRCode.toDataURL(otpauthUrl);
-
-    res.status(201).json({
-      success: true,
-      message: 'User created successfully. Please scan the QR code with your authenticator app.',
-      user: {
-        id: user._id,
-        username: user.username,
-        name: user.name,
-        role: user.role,
-        grade: user.grade
-      },
-      qrCode: qrCodeDataUrl,
-      secret: secret.base32, // In production, you might not want to send this
-      setupInstructions: {
-        step1: 'Install an authenticator app (Google Authenticator, Authy, etc.)',
-        step2: 'Scan the QR code or enter the secret manually',
-        step3: 'Save the setup and use the 6-digit code to login'
-      }
-    });
-
+    return done(null, user);
   } catch (error) {
-    console.error('Registration error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error creating account',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
+    console.error('Google OAuth error:', error);
+    return done(error, null);
   }
 };
 
-// Login with username and 2FA code
-exports.login = async (req, res) => {
+// Get current user info
+exports.getMe = async (req, res) => {
   try {
-    const { username, twoFactorCode } = req.body;
-
-    // Find user and include 2FA secret
-    const user = await User.findOne({ username: username.toLowerCase() }).select('+twoFactorSecret');
-    
-    if (!user) {
-      return res.status(401).json({
+    const user = await User.findById(req.user.id);
+    if (!user || !user.hasAccess()) {
+      return res.status(403).json({
         success: false,
-        message: 'Invalid username or authentication code'
+        message: 'Access denied'
       });
     }
-
-    // Verify 2FA code
-    const isValidToken = user.verify2FAToken(twoFactorCode);
-    
-    if (!isValidToken) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid or expired authentication code'
-      });
-    }
-
-    // Update last login
-    user.lastLogin = new Date();
-    await user.save();
-
-    // Generate JWT token
-    const token = user.generateAuthToken();
 
     res.json({
       success: true,
-      token,
       user: {
         id: user._id,
-        username: user.username,
+        email: user.email,
         name: user.name,
+        avatar: user.avatar,
         role: user.role,
         grade: user.grade,
+        accessLevel: user.accessLevel,
         stats: user.stats,
         subscription: user.subscription
       }
     });
-
-  } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error logging in',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
-  }
-};
-
-// Verify 2FA setup (for first-time setup verification)
-exports.verify2FA = async (req, res) => {
-  try {
-    const { username, twoFactorCode } = req.body;
-
-    const user = await User.findOne({ username: username.toLowerCase() }).select('+twoFactorSecret');
-    
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found'
-      });
-    }
-
-    const isValid = user.verify2FAToken(twoFactorCode);
-    
-    if (!isValid) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid code. Please try again.'
-      });
-    }
-
-    res.json({
-      success: true,
-      message: '2FA setup verified successfully!'
-    });
-
-  } catch (error) {
-    console.error('2FA verification error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error verifying 2FA'
-    });
-  }
-};
-
-// Get current user
-exports.getMe = async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id);
-    
-    res.json({
-      success: true,
-      user: {
-        id: user._id,
-        username: user.username,
-        name: user.name,
-        role: user.role,
-        grade: user.grade,
-        stats: user.stats,
-        subscription: user.subscription,
-        preferences: user.preferences
-      }
-    });
-
   } catch (error) {
     console.error('Get user error:', error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching user data'
+      message: 'Error fetching user info'
     });
   }
 };
@@ -187,10 +87,10 @@ exports.updateProfile = async (req, res) => {
   try {
     const updates = req.body;
     
-    // Fields that cannot be updated
-    delete updates.username;
-    delete updates.twoFactorSecret;
-    delete updates.role;
+    // Fields that cannot be updated via this endpoint
+    delete updates.email;
+    delete updates.googleId;
+    delete updates.accessLevel;
     delete updates.subscription;
 
     const user = await User.findByIdAndUpdate(
@@ -199,11 +99,27 @@ exports.updateProfile = async (req, res) => {
       { new: true, runValidators: true }
     );
 
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
     res.json({
       success: true,
-      user
+      user: {
+        id: user._id,
+        email: user.email,
+        name: user.name,
+        avatar: user.avatar,
+        role: user.role,
+        grade: user.grade,
+        accessLevel: user.accessLevel,
+        stats: user.stats,
+        subscription: user.subscription
+      }
     });
-
   } catch (error) {
     console.error('Update profile error:', error);
     res.status(500).json({
@@ -213,43 +129,239 @@ exports.updateProfile = async (req, res) => {
   }
 };
 
-// Reset 2FA (requires admin or special verification)
-exports.reset2FA = async (req, res) => {
+// Admin: Add allowed emails
+exports.addAllowedEmails = async (req, res) => {
   try {
-    const { username } = req.body;
-    
-    // In production, you'd want additional verification here
-    // For now, we'll allow reset with just username
-    
-    const user = await User.findOne({ username: username.toLowerCase() });
-    
-    if (!user) {
-      return res.status(404).json({
+    const { emails, accessLevel = 'basic', notes } = req.body;
+    const adminUser = await User.findById(req.user.id);
+
+    if (!adminUser || adminUser.accessLevel !== 'admin') {
+      return res.status(403).json({
         success: false,
-        message: 'User not found'
+        message: 'Admin access required'
       });
     }
 
-    // Generate new 2FA secret
-    const secret = user.generate2FASecret();
-    await user.save();
+    if (!Array.isArray(emails) || emails.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide an array of emails'
+      });
+    }
 
-    // Generate new QR code
-    const otpauthUrl = secret.otpauth_url;
-    const qrCodeDataUrl = await QRCode.toDataURL(otpauthUrl);
+    const results = [];
+    const errors = [];
+
+    for (const email of emails) {
+      try {
+        const allowedEmail = new AllowedEmail({
+          email: email.toLowerCase().trim(),
+          domain: email.toLowerCase().split('@')[1],
+          accessLevel,
+          addedBy: req.user.id,
+          notes
+        });
+        
+        await allowedEmail.save();
+        results.push(email);
+      } catch (error) {
+        errors.push({ email, error: error.message });
+      }
+    }
 
     res.json({
       success: true,
-      message: '2FA has been reset. Please scan the new QR code.',
-      qrCode: qrCodeDataUrl,
-      secret: secret.base32
+      message: `Added ${results.length} emails successfully`,
+      added: results,
+      errors: errors
     });
-
   } catch (error) {
-    console.error('Reset 2FA error:', error);
+    console.error('Add allowed emails error:', error);
     res.status(500).json({
       success: false,
-      message: 'Error resetting 2FA'
+      message: 'Error adding allowed emails'
+    });
+  }
+};
+
+// Admin: Get allowed emails
+exports.getAllowedEmails = async (req, res) => {
+  try {
+    const adminUser = await User.findById(req.user.id);
+
+    if (!adminUser || adminUser.accessLevel !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Admin access required'
+      });
+    }
+
+    const { page = 1, limit = 50, search = '', accessLevel } = req.query;
+    const skip = (page - 1) * limit;
+
+    const query = {};
+    if (search) {
+      query.email = { $regex: search, $options: 'i' };
+    }
+    if (accessLevel) {
+      query.accessLevel = accessLevel;
+    }
+
+    const allowedEmails = await AllowedEmail.find(query)
+      .populate('addedBy', 'name email')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const total = await AllowedEmail.countDocuments(query);
+
+    res.json({
+      success: true,
+      allowedEmails,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    console.error('Get allowed emails error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching allowed emails'
+    });
+  }
+};
+
+// Admin: Remove allowed email
+exports.removeAllowedEmail = async (req, res) => {
+  try {
+    const adminUser = await User.findById(req.user.id);
+
+    if (!adminUser || adminUser.accessLevel !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Admin access required'
+      });
+    }
+
+    const { emailId } = req.params;
+    const allowedEmail = await AllowedEmail.findByIdAndDelete(emailId);
+
+    if (!allowedEmail) {
+      return res.status(404).json({
+        success: false,
+        message: 'Allowed email not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Email access removed successfully'
+    });
+  } catch (error) {
+    console.error('Remove allowed email error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error removing email access'
+    });
+  }
+};
+
+// Admin: Get user analytics
+exports.getUserAnalytics = async (req, res) => {
+  try {
+    const adminUser = await User.findById(req.user.id);
+
+    if (!adminUser || adminUser.accessLevel !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Admin access required'
+      });
+    }
+
+    const totalUsers = await User.countDocuments({ isActive: true });
+    const totalAllowedEmails = await AllowedEmail.countDocuments({ isActive: true });
+    const recentUsers = await User.find({ isActive: true })
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .select('name email createdAt lastLogin stats.totalWorksheets');
+
+    const loginStats = await AllowedEmail.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalLogins: { $sum: '$loginCount' },
+          activeEmails: { 
+            $sum: { $cond: [{ $gt: ['$loginCount', 0] }, 1, 0] }
+          }
+        }
+      }
+    ]);
+
+    res.json({
+      success: true,
+      analytics: {
+        totalUsers,
+        totalAllowedEmails,
+        totalLogins: loginStats[0]?.totalLogins || 0,
+        activeEmails: loginStats[0]?.activeEmails || 0,
+        recentUsers
+      }
+    });
+  } catch (error) {
+    console.error('Get user analytics error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching user analytics'
+    });
+  }
+};
+
+// Initialize override email (for first-time setup)
+exports.initializeOverrideEmail = async (req, res) => {
+  try {
+    const { email, secret } = req.body;
+
+    // Check if this is the first setup
+    const existingAdmin = await User.findOne({ accessLevel: 'admin' });
+    if (existingAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: 'Admin already exists'
+      });
+    }
+
+    // Verify secret (you should set this in environment variables)
+    if (secret !== process.env.ADMIN_SETUP_SECRET) {
+      return res.status(403).json({
+        success: false,
+        message: 'Invalid setup secret'
+      });
+    }
+
+    // Add the email as an override admin email
+    const allowedEmail = new AllowedEmail({
+      email: email.toLowerCase(),
+      domain: email.toLowerCase().split('@')[1],
+      accessLevel: 'admin',
+      isOverrideEmail: true,
+      addedBy: null, // System added
+      notes: 'Initial admin setup'
+    });
+
+    await allowedEmail.save();
+
+    res.json({
+      success: true,
+      message: 'Admin email initialized successfully'
+    });
+  } catch (error) {
+    console.error('Initialize override email error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error initializing admin email'
     });
   }
 };

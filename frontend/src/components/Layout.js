@@ -9,6 +9,7 @@ import {
   BarChart,
   LogOut,
   User,
+  Users,
   Moon,
   Sun,
   Edit2
@@ -37,7 +38,8 @@ function Layout({ children }) {
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'Worksheets', href: '/worksheets', icon: FileText },
-    { name: 'Analytics', href: '/analytics', icon: BarChart }
+    { name: 'Analytics', href: '/analytics', icon: BarChart },
+    ...(user?.accessLevel === 'admin' ? [{ name: 'Admin', href: '/admin', icon: Users }] : [])
   ];
 
   return (

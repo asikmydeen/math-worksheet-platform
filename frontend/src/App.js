@@ -9,6 +9,8 @@ import Worksheets from './pages/Worksheets';
 import WorksheetSolver from './pages/WorksheetSolver';
 import WorksheetView from './pages/WorksheetView';
 import Analytics from './pages/Analytics';
+import AdminPanel from './pages/AdminPanel';
+import AccessDenied from './pages/AccessDenied';
 import GoogleCallback from './pages/GoogleCallback';
 import api from './services/api';
 
@@ -131,12 +133,14 @@ function App() {
           <Routes>
             <Route path="/" element={user ? <Navigate to="/dashboard" /> : <LandingPage />} />
             <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
+            <Route path="/access-denied" element={<AccessDenied />} />
             <Route path="/auth/google/success" element={<GoogleCallback />} />
             <Route path="/dashboard" element={user ? <Dashboard /> : <Navigate to="/login" />} />
             <Route path="/worksheets" element={user ? <Worksheets /> : <Navigate to="/login" />} />
             <Route path="/worksheet/:id" element={user ? <WorksheetSolver /> : <Navigate to="/login" />} />
             <Route path="/worksheet/:id/view" element={user ? <WorksheetView /> : <Navigate to="/login" />} />
             <Route path="/analytics" element={user ? <Analytics /> : <Navigate to="/login" />} />
+            <Route path="/admin" element={user?.accessLevel === 'admin' ? <AdminPanel /> : <Navigate to="/dashboard" />} />
           </Routes>
         </Router>
       </AuthContext.Provider>
