@@ -287,8 +287,8 @@ function Analytics() {
                 12%
               </span>
             </div>
-            <p className={`text-2xl font-bold ${darkMode.text}`>{analytics.overview.totalWorksheets}</p>
-            <p className={`text-sm ${darkMode.textSecondary}`>Total Worksheets</p>
+            <p className={`text-2xl font-bold ${darkMode.text}`}>{analytics.overview.totalWorksheets}</p>
+            <p className={`text-sm ${darkMode.textSecondary}`}>Total Worksheets</p>
           </div>
 
           <div className={`${darkMode.card} rounded-xl p-4 shadow-sm`}>
@@ -298,8 +298,8 @@ function Analytics() {
                 {Math.round((analytics.overview.completedWorksheets / analytics.overview.totalWorksheets) * 100)}%
               </span>
             </div>
-            <p className={`text-2xl font-bold ${darkMode.text}`>{analytics.overview.completedWorksheets}</p>
-            <p className={`text-sm ${darkMode.textSecondary}`>Completed</p>
+            <p className={`text-2xl font-bold ${darkMode.text}`}>{analytics.overview.completedWorksheets}</p>
+            <p className={`text-sm ${darkMode.textSecondary}`}>Completed</p>
           </div>
 
           <div className={`${darkMode.card} rounded-xl p-4 shadow-sm`}>
@@ -312,34 +312,34 @@ function Analytics() {
                 {Math.abs(analytics.overview.improvement)}%
               </span>
             </div>
-            <p className={`text-2xl font-bold ${darkMode.text}`>{analytics.overview.averageScore}%</p>
-            <p className={`text-sm ${darkMode.textSecondary}`>Average Score</p>
+            <p className={`text-2xl font-bold ${darkMode.text}`}>{analytics.overview.averageScore}%</p>
+            <p className={`text-sm ${darkMode.textSecondary}`}>Average Score</p>
           </div>
 
           <div className={`${darkMode.card} rounded-xl p-4 shadow-sm`}>
             <div className="flex items-center justify-between mb-2">
               <Clock className="w-8 h-8 text-orange-500" />
             </div>
-            <p className={`text-2xl font-bold ${darkMode.text}`>{formatTime(analytics.overview.totalTimeSpent)}</p>
-            <p className={`text-sm ${darkMode.textSecondary}`>Time Spent</p>
+            <p className={`text-2xl font-bold ${darkMode.text}`}>{formatTime(analytics.overview.totalTimeSpent)}</p>
+            <p className={`text-sm ${darkMode.textSecondary}`}>Time Spent</p>
           </div>
 
           <div className={`${darkMode.card} rounded-xl p-4 shadow-sm`}>
             <div className="flex items-center justify-between mb-2">
               <Zap className="w-8 h-8 text-yellow-500" />
             </div>
-            <p className={`text-2xl font-bold ${darkMode.text}`>{analytics.overview.streak}</p>
-            <p className={`text-sm ${darkMode.textSecondary}`>Day Streak</p>
+            <p className={`text-2xl font-bold ${darkMode.text}`}>{analytics.overview.streak}</p>
+            <p className={`text-sm ${darkMode.textSecondary}`}>Day Streak</p>
           </div>
 
           <div className={`${darkMode.card} rounded-xl p-4 shadow-sm`}>
             <div className="flex items-center justify-between mb-2">
               <Activity className="w-8 h-8 text-purple-500" />
             </div>
-            <p className={`text-2xl font-bold ${darkMode.text}`>
+            <p className={`text-2xl font-bold ${darkMode.text}`}>
               {Math.round(analytics.overview.totalTimeSpent / analytics.overview.completedWorksheets / 60)}
             </p>
-            <p className={`text-sm ${darkMode.textSecondary}`>Avg. Min/Sheet</p>
+            <p className={`text-sm ${darkMode.textSecondary}`}>Avg. Min/Sheet</p>
           </div>
         </div>
 
