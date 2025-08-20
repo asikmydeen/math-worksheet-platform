@@ -1,8 +1,8 @@
 {
-    email admin@personalpod.net
+    email admin@brainybees.org
 }
 
-worksheets.personalpod.net {
+worksheets.brainybees.org {
     # Frontend
     handle /* {
         reverse_proxy frontend:80
