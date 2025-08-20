@@ -11,6 +11,7 @@ const authRoutes = require('./routes/authRoutes');
 const worksheetRoutes = require('./routes/worksheetRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 const kidProfileRoutes = require('./routes/kidProfileRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
 
 const app = express();
 
@@ -42,8 +43,14 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
-// Body parser middleware
-app.use(express.json({ limit: '10mb' }));
+// Body parser middleware - Skip for webhook endpoint
+app.use((req, res, next) => {
+  if (req.originalUrl === '/api/payments/webhook') {
+    next();
+  } else {
+    express.json({ limit: '10mb' })(req, res, next);
+  }
+});
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Session middleware (required for Passport)
@@ -76,6 +83,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/worksheets', worksheetRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/kid-profiles', kidProfileRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // 404 handler
 app.use((req, res) => {

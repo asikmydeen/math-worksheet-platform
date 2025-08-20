@@ -14,6 +14,7 @@ import ComprehensiveAdminDashboard from './pages/ComprehensiveAdminDashboard';
 import KidManagement from './pages/KidManagement';
 import AccessDenied from './pages/AccessDenied';
 import GoogleCallback from './pages/GoogleCallback';
+import PaymentSuccess from './pages/PaymentSuccess';
 import KidProfileSetup from './components/KidProfileSetup';
 import api from './services/api';
 
@@ -212,7 +213,9 @@ function App() {
             <Route path="/" element={user ? <Navigate to="/dashboard" /> : <LandingPage />} />
             <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
             <Route path="/access-denied" element={<AccessDenied />} />
+            <Route path="/pricing" element={<Navigate to="/#pricing" />} />
             <Route path="/auth/google/success" element={<GoogleCallback />} />
+            <Route path="/payment-success" element={user ? <PaymentSuccess /> : <Navigate to="/login" />} />
             <Route path="/dashboard" element={user ? <Dashboard /> : <Navigate to="/login" />} />
             <Route path="/worksheets" element={user ? <Worksheets /> : <Navigate to="/login" />} />
             <Route path="/worksheet/:id" element={user ? <WorksheetSolver /> : <Navigate to="/login" />} />

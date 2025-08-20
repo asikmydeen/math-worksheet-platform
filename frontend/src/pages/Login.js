@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useDarkModeClasses } from '../components/DarkModeWrapper';
+import { useLocation } from 'react-router-dom';
+import paymentService from '../services/payment';
+import { useAuth } from '../contexts/AuthContext';
 import { 
   Calculator, 
   Shield, 
@@ -14,6 +17,8 @@ import {
 function Login() {
   const { isDarkMode, toggleDarkMode } = useTheme();
   const darkMode = useDarkModeClasses();
+  const location = useLocation();
+  const { user } = useAuth();
 
   const features = [
     {
@@ -32,6 +37,14 @@ function Login() {
       description: "Built by educators for educators and learners"
     }
   ];
+
+  useEffect(() => {
+    // Handle redirect after login
+    if (user && location.state?.selectedPlan) {
+      paymentService.createCheckoutSession(location.state.selectedPlan)
+        .catch(err => console.error('Payment redirect error:', err));
+    }
+  }, [user, location.state]);
 
   return (
     <div className={`min-h-screen ${isDarkMode ? 'dark bg-gray-900' : 'bg-gradient-to-br from-purple-500 via-pink-500 to-blue-500'} flex items-center justify-center p-4`}>

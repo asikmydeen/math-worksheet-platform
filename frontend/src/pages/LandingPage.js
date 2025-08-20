@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
 import { useDarkModeClasses } from '../components/DarkModeWrapper';
+import { useAuth } from '../contexts/AuthContext';
+import paymentService from '../services/payment';
 import {
   Calculator,
   Sparkles,
@@ -24,7 +26,10 @@ import {
 function LandingPage() {
   const { isDarkMode, toggleDarkMode } = useTheme();
   const darkMode = useDarkModeClasses();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [loadingPlan, setLoadingPlan] = useState(null);
 
   const features = [
     {
@@ -149,6 +154,25 @@ function LandingPage() {
     { number: "50,000+", label: "Problems Solved" },
     { number: "98%", label: "Satisfaction Rate" }
   ];
+
+  const handlePlanClick = async (plan) => {
+    // If user is not logged in, redirect to login
+    if (!user) {
+      navigate('/login', { state: { redirectTo: '/pricing', selectedPlan: plan } });
+      return;
+    }
+
+    setLoadingPlan(plan);
+    try {
+      await paymentService.createCheckoutSession(plan);
+      // Stripe will redirect to checkout page
+    } catch (error) {
+      console.error('Payment error:', error);
+      alert('Failed to initiate payment. Please try again.');
+    } finally {
+      setLoadingPlan(null);
+    }
+  };
 
   return (
     <div className={`min-h-screen ${isDarkMode ? 'dark bg-gray-900' : 'bg-white'}`}>
@@ -364,13 +388,15 @@ function LandingPage() {
                 </ul>
 
                 <button
+                  onClick={() => handlePlanClick(plan.name.toLowerCase())}
+                  disabled={loadingPlan === plan.name.toLowerCase()}
                   className={`w-full py-4 rounded-xl font-semibold text-lg transition-all transform hover:scale-105 ${
                     plan.popular
                       ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:shadow-lg'
                       : `border ${darkMode.buttonSecondary}`
-                  }`}
+                  } ${loadingPlan === plan.name.toLowerCase() ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  {plan.buttonText}
+                  {loadingPlan === plan.name.toLowerCase() ? 'Processing...' : plan.buttonText}
                 </button>
               </div>
             ))}
