@@ -1,7 +1,8 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
 import { useDarkModeClasses } from '../components/DarkModeWrapper';
+import paymentService from '../services/payment';
 import { 
   Shield, 
   Mail, 
@@ -14,6 +15,7 @@ import {
 function AccessDenied() {
   const { isDarkMode, toggleDarkMode } = useTheme();
   const darkMode = useDarkModeClasses();
+  const navigate = useNavigate();
 
   return (
     <div className={`min-h-screen ${isDarkMode ? 'dark bg-gray-900' : 'bg-gradient-to-br from-red-500 via-pink-500 to-purple-500'} flex items-center justify-center p-4`}>
@@ -57,8 +59,8 @@ function AccessDenied() {
                   Choose your plan:
                 </p>
                 <ul className={`text-sm ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'} space-y-1`}>
-                  <li>• <strong>Free Trial:</strong> 10 AI-generated worksheets</li>
                   <li>• <strong>Monthly:</strong> 50 worksheets per month - $9.99</li>
+                  <li>• <strong>Annual:</strong> 600 worksheets per year - $99.99 (Save 17%)</li>
                   <li>• <strong>Lifetime:</strong> Unlimited access - $299.99 (Best Value!)</li>
                 </ul>
               </div>
@@ -88,7 +90,7 @@ function AccessDenied() {
         {/* Actions */}
         <div className="flex flex-col space-y-3">
           <Link
-            to="/"
+            to="/#pricing"
             className="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-xl font-semibold hover:shadow-lg transform hover:scale-[1.02] transition-all"
           >
             🚀 Get Started - Choose Your Plan
