@@ -1,14 +1,25 @@
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const User = require('../models/User');
 const AppError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
 
-// Price IDs for different plans (you'll need to create these in Stripe Dashboard)
-const PRICE_IDS = {
+// Initialize Stripe lazily to ensure env vars are loaded
+let stripe;
+const getStripe = () => {
+  if (!stripe) {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      throw new Error('STRIPE_SECRET_KEY is not configured');
+    }
+    stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+  }
+  return stripe;
+};
+
+// Price IDs for different plans
+const getPriceIds = () => ({
   monthly: process.env.STRIPE_MONTHLY_PRICE_ID,
   annual: process.env.STRIPE_ANNUAL_PRICE_ID,
   lifetime: process.env.STRIPE_LIFETIME_PRICE_ID
-};
+});
 
 // Create checkout session
 exports.createCheckoutSession = catchAsync(async (req, res, next) => {
@@ -23,7 +34,7 @@ exports.createCheckoutSession = catchAsync(async (req, res, next) => {
   let customerId = user.subscription.stripeCustomerId;
   
   if (!customerId) {
-    const customer = await stripe.customers.create({
+    const customer = await getStripe().customers.create({
       email: user.email,
       name: user.name,
       metadata: {
@@ -37,12 +48,12 @@ exports.createCheckoutSession = catchAsync(async (req, res, next) => {
   }
 
   // Create checkout session
-  const session = await stripe.checkout.sessions.create({
+  const session = await getStripe().checkout.sessions.create({
     customer: customerId,
     payment_method_types: ['card'],
     line_items: [
       {
-        price: PRICE_IDS[plan],
+        price: getPriceIds()[plan],
         quantity: 1
       }
     ],
@@ -71,7 +82,7 @@ exports.handlePaymentSuccess = catchAsync(async (req, res, next) => {
   }
 
   // Retrieve the session from Stripe
-  const session = await stripe.checkout.sessions.retrieve(session_id);
+  const session = await getStripe().checkout.sessions.retrieve(session_id);
   
   if (!session || session.payment_status !== 'paid') {
     return next(new AppError('Payment not completed', 400));
@@ -129,7 +140,7 @@ exports.handleWebhook = catchAsync(async (req, res, next) => {
   let event;
 
   try {
-    event = stripe.webhooks.constructEvent(
+    event = getStripe().webhooks.constructEvent(
       req.body,
       sig,
       process.env.STRIPE_WEBHOOK_SECRET

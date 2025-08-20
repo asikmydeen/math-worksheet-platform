@@ -1,4 +1,9 @@
 require('dotenv').config();
+const checkRequiredEnvVars = require('./src/config/checkEnv');
+
+// Check environment variables before starting
+checkRequiredEnvVars();
+
 const app = require('./src/app');
 const connectDB = require('./src/config/database');
 
