@@ -1,0 +1,40 @@
+name: Deploy to AWS
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Deploy to AWS EC2
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.AWS_HOST }}
+        username: ubuntu
+        key: ${{ secrets.AWS_SSH_KEY }}
+        script: |
+          cd ~/math-worksheet-platform
+          
+          # Backup current .env
+          cp .env .env.backup
+          
+          # Pull latest code
+          git pull origin main
+          
+          # Restore .env (to preserve API keys)
+          cp .env.backup .env
+          
+          # Build and restart services
+          docker-compose build
+          docker-compose down
+          docker-compose up -d
+          
+          # Check if services are healthy
+          sleep 10
+          docker-compose ps
+          
+          echo "Deployment completed!"
