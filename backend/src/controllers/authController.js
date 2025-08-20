@@ -39,7 +39,7 @@ exports.googleCallback = async (accessToken, refreshToken, profile, done) => {
         activeKidProfile: null,
         subscription: {
           plan: 'free',
-          aiRequestsLimit: 0, // No free worksheets until they purchase
+          aiRequestsLimit: 2, // Give a small number of free worksheets to try
           aiRequestsUsed: 0
         }
       });
@@ -48,7 +48,6 @@ exports.googleCallback = async (accessToken, refreshToken, profile, done) => {
       // Update existing user info
       user.name = profile.displayName;
       user.avatar = profile.photos[0]?.value;
-      user.accessLevel = allowedEmail.accessLevel || user.accessLevel;
       user.lastLogin = new Date();
       
       // Ensure existing users have the right default values
@@ -64,9 +63,6 @@ exports.googleCallback = async (accessToken, refreshToken, profile, done) => {
       
       await user.save();
     }
-
-    // Track login in allowed email
-    await allowedEmail.trackLogin();
 
     return done(null, user);
   } catch (error) {
