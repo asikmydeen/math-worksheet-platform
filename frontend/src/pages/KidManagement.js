@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-import { api } from '../utils/api';
+import api from '../services/api';
 import Layout from '../components/Layout';
 import { Edit2, Trash2, Plus, BarChart, Trophy, Calendar, Clock } from 'lucide-react';
 

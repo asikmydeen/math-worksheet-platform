@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { api } from '../utils/api';
+import api from '../services/api';
 
 const KidProfileSetup = ({ onComplete }) => {
   const [profiles, setProfiles] = useState([{ name: '', grade: '1', avatar: '' }]);
