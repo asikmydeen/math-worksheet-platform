@@ -76,9 +76,26 @@ Return the response in this exact JSON format:
   ]
 }
 
+AGE-APPROPRIATE FORMATTING RULES:
+- For Kindergarten-Grade 2 Math: Use simple format like "3 + 2 = ___" instead of "What is 3 + 2?"
+- KINDERGARTEN MUST BE 100% MULTIPLE-CHOICE - NO TYPING REQUIRED
+- For young grades (K-3): Prefer multiple-choice and true-false questions (easier for kids to click)
+- For K-2: Use simple, direct language with visual-friendly problems
+- For all grades: Mix question types, but favor clickable options over typing when possible
+- Multiple-choice should have 3 options for kindergarten, 4 options for grades 1+
+- True/false questions should be clear and unambiguous
+- For math problems requiring work, still use fill-in-blank type
+
+CRITICAL KINDERGARTEN RULES:
+- ALL questions MUST be multiple-choice (no fill-in-blank, no typing)
+- Use very simple numbers (1-10)
+- Include visual/counting problems like "How many apples? 🍎🍎🍎" with choices
+- Simple comparisons like "Which is bigger?" with 3 choices
+- Basic shapes and colors with multiple-choice
+
 Important:
 - Make problems engaging and subject-appropriate
-- Include various problem types suitable for the subject
+- 60% of questions should be multiple-choice or true-false for easier interaction
 - For subjects like English/History, use more text-based questions
 - For Science, include experimental or analytical questions
 - Ensure difficulty matches the grade level
@@ -119,6 +136,29 @@ Return the response in this exact JSON format:
   ]
 }
 
+AGE-APPROPRIATE FORMATTING RULES:
+- For Kindergarten-Grade 2 Math: Use simple format like "3 + 2 = ___" instead of "What is 3 + 2?"
+- KINDERGARTEN MUST BE 100% MULTIPLE-CHOICE - NO TYPING REQUIRED
+- For Kindergarten: Use very simple problems with 3 choices like "2 + 1 = ?" choices: [1, 2, 3]
+- For young grades (K-3): Make 70% of questions multiple-choice or true-false (easier for kids)
+- For middle grades (4-8): Use 50% multiple-choice/true-false, 50% fill-in-blank
+- For high school (9-12): Mix all types based on subject needs
+- Multiple-choice: 3 options for kindergarten, 4 options for grades 1+
+- True/false: Use simple, clear statements
+
+QUESTION TYPE DISTRIBUTION BY GRADE:
+- Kindergarten: 100% multiple-choice (NO fill-in-blank, NO typing required)
+- Grades 1-2: 70% multiple-choice/true-false, 30% simple fill-in-blank
+- Grades 3-5: 60% multiple-choice/true-false, 40% fill-in-blank/short-answer
+- Grades 6+: Balanced mix of all types
+
+CRITICAL KINDERGARTEN RULES:
+- ALL questions MUST be multiple-choice
+- Use numbers 1-10 only
+- Include counting questions with visual representations
+- Simple comparisons (bigger/smaller, more/less)
+- Basic shapes and patterns
+
 Guidelines:
 - Mix problem types appropriate for ${subject}
 - Ensure appropriate difficulty progression
@@ -126,7 +166,7 @@ Guidelines:
 - Content should be grade-appropriate
 - Include 2-3 hints that guide without giving away the answer
 - Explanations should teach the concept clearly
-- For multiple-choice, provide 4 options with one correct answer
+- For multiple-choice, provide clear, distinct options
 - For true-false, make statements clear and unambiguous`;
       }
 
@@ -143,9 +183,17 @@ Guidelines:
             content: prompt
           }
         ],
-        temperature: aiConfig.temperature,
-        response_format: { type: "json_object" }
+        temperature: aiConfig.temperature
       };
+
+      // Only add response_format for models that support it
+      const supportsJsonMode = 
+        aiConfig.model.includes('gpt-4') ||
+        aiConfig.model.includes('gpt-3.5-turbo');
+      
+      if (supportsJsonMode) {
+        completionParams.response_format = { type: "json_object" };
+      }
 
       // Determine which token parameter to use
       const modelName = aiConfig.model.toLowerCase();
@@ -156,7 +204,8 @@ Guidelines:
         modelName.includes('2024') ||
         modelName.includes('2025') ||
         modelName.includes('o1') ||
-        modelName.includes('o2');
+        modelName.includes('o2') ||
+        modelName.includes('gpt-4o');
 
       if (useNewParam) {
         completionParams.max_completion_tokens = aiConfig.max_tokens;
@@ -165,10 +214,26 @@ Guidelines:
       }
 
       console.log(`Generating ${subject} worksheet for grade ${grade} using model: ${aiConfig.model}`);
+      console.log('Completion params:', JSON.stringify({
+        model: completionParams.model,
+        temperature: completionParams.temperature,
+        hasResponseFormat: !!completionParams.response_format,
+        tokenParam: completionParams.max_completion_tokens ? 'max_completion_tokens' : 'max_tokens',
+        tokenValue: completionParams.max_completion_tokens || completionParams.max_tokens
+      }, null, 2));
 
       const completion = await openai.chat.completions.create(completionParams);
 
-      const response = JSON.parse(completion.choices[0].message.content);
+      // Log the raw response for debugging
+      const rawContent = completion.choices[0].message.content;
+      console.log('AI Raw Response:', rawContent);
+      console.log('AI Response Length:', rawContent ? rawContent.length : 0);
+
+      if (!rawContent) {
+        throw new Error('Empty response from AI model');
+      }
+
+      const response = JSON.parse(rawContent);
       
       // Validate response structure
       if (!response.problems || !Array.isArray(response.problems)) {

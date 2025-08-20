@@ -1,0 +1,96 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: math-platform-mongodb
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: math-worksheet-platform
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_backup:/backup
+    networks:
+      - math-platform-network
+    command: mongod --auth
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Backend API
+  backend:
+    image: math-worksheet-platform-backend:latest
+    container_name: math-platform-backend
+    restart: always
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      MONGODB_URI: mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongodb:27017/math-worksheet-platform?authSource=admin
+      JWT_SECRET: ${JWT_SECRET}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL}
+      FRONTEND_URL: ${FRONTEND_URL}
+      CLIENT_URL: ${CLIENT_URL}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      SESSION_SECRET: ${SESSION_SECRET}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - math-platform-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Frontend React App
+  frontend:
+    image: math-worksheet-platform-frontend:latest
+    container_name: math-platform-frontend
+    restart: always
+    environment:
+      REACT_APP_API_URL: /api
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - math-platform-network
+
+  # Caddy Reverse Proxy (handles HTTPS automatically)
+  caddy:
+    image: caddy:2
+    container_name: math-platform-caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - math-platform-network
+
+networks:
+  math-platform-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+    driver: local
+  mongodb_backup:
+    driver: local
+  caddy_data:
+    driver: local
+  caddy_config:
+    driver: local

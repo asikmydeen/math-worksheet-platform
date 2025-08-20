@@ -7,6 +7,7 @@ import Worksheets from './pages/Worksheets';
 import WorksheetSolver from './pages/WorksheetSolver';
 import WorksheetView from './pages/WorksheetView';
 import Analytics from './pages/Analytics';
+import GoogleCallback from './pages/GoogleCallback';
 import api from './services/api';
 
 function App() {
@@ -72,6 +73,22 @@ function App() {
     }
   };
 
+  const loginWithToken = async (newToken) => {
+    setToken(newToken);
+    localStorage.setItem('token', newToken);
+    api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+    
+    // Fetch user info with the new token
+    try {
+      const response = await api.get('/auth/me');
+      setUser(response.data.user);
+      return { success: true };
+    } catch (error) {
+      logout();
+      throw error;
+    }
+  };
+
   const logout = () => {
     setToken(null);
     setUser(null);
@@ -91,10 +108,11 @@ function App() {
   }
 
   return (
-    <AuthContext.Provider value={{ user, token, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, login, register, logout, loginWithToken }}>
       <Router>
         <Routes>
           <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
+          <Route path="/auth/google/success" element={<GoogleCallback />} />
           <Route path="/dashboard" element={user ? <Dashboard /> : <Navigate to="/login" />} />
           <Route path="/worksheets" element={user ? <Worksheets /> : <Navigate to="/login" />} />
           <Route path="/worksheet/:id" element={user ? <WorksheetSolver /> : <Navigate to="/login" />} />

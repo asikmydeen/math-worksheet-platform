@@ -214,6 +214,7 @@ function Dashboard() {
         <WorksheetGenerator
           onClose={() => setShowGenerator(false)}
           onGenerate={handleWorksheetGenerated}
+          userGrade={user?.grade}
         />
       )}
     </Layout>

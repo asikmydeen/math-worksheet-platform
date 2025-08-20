@@ -20,6 +20,19 @@ function Analytics() {
   const [showDemo, setShowDemo] = useState(false);
   const [hasData, setHasData] = useState(true);
 
+  // Helper function to format time ago
+  const getTimeAgo = (dateString) => {
+    if (!dateString) return 'Recently';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInMinutes = Math.floor((now - date) / 60000);
+    
+    if (diffInMinutes < 1) return 'Just now';
+    if (diffInMinutes < 60) return `${diffInMinutes} minutes ago`;
+    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)} hours ago`;
+    return `${Math.floor(diffInMinutes / 1440)} days ago`;
+  };
+
   useEffect(() => {
     if (showDemo) {
       setAnalytics(getMockAnalytics());
@@ -35,9 +48,44 @@ function Analytics() {
       const params = new URLSearchParams({ timeRange });
       if (selectedGrade !== 'all') params.append('grade', selectedGrade);
       
-      const response = await api.get(`/analytics/dashboard?${params}`);
-      if (response.data && response.data.overview) {
-        setAnalytics(response.data);
+      const response = await api.get(`/analytics/user?${params}`);
+      if (response.data && response.data.analytics) {
+        // Transform the API response to match the expected structure
+        const data = response.data.analytics;
+        const transformed = {
+          overview: {
+            totalWorksheets: data.userStats?.totalWorksheets || 0,
+            completedWorksheets: data.userStats?.completedWorksheets || 0,
+            averageScore: Math.round(data.userStats?.averageScore || 0),
+            totalTimeSpent: data.userStats?.totalTimeSpent || 0,
+            totalProblems: data.userStats?.totalProblems || 0,
+            currentStreak: data.userStats?.streak?.current || 0,
+            streak: data.userStats?.streak?.current || 0,
+            improvement: 0 // Calculate if needed
+          },
+          performanceByGrade: data.performanceByGrade || [],
+          performanceByTopic: data.performanceByTopic || [],
+          recentActivity: (data.recentActivity || []).slice(0, 5).map(activity => ({
+            ...activity,
+            timeAgo: getTimeAgo(activity.completedAt || activity.createdAt)
+          })),
+          // Transform performanceByTopic to topicPerformance format
+          topicPerformance: (data.performanceByTopic || []).map(item => ({
+            topic: item._id || item.topic || 'Unknown',
+            score: Math.round(item.averageScore || 0),
+            count: item.count || 0
+          })),
+          performanceByDay: [], // Empty for now
+          difficultyDistribution: [
+            { name: 'Easy', value: 0 },
+            { name: 'Medium', value: 0 },
+            { name: 'Hard', value: 0 }
+          ],
+          skillsRadar: [],
+          achievements: [],
+          progressData: [] // Add empty array for now
+        };
+        setAnalytics(transformed);
         setHasData(true);
       } else {
         setAnalytics(null);

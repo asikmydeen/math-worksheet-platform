@@ -6,9 +6,14 @@ const openai = new OpenAI({
 });
 
 // Configuration object for easy model switching
+const modelName = process.env.OPENAI_MODEL || 'gpt-3.5-turbo';
+
+// Some models only support default temperature
+const supportsCustomTemperature = !modelName.includes('gpt-5-nano');
+
 const aiConfig = {
-  model: process.env.OPENAI_MODEL || 'gpt-3.5-turbo',
-  temperature: 0.5,
+  model: modelName,
+  temperature: supportsCustomTemperature ? 0.5 : 1.0,
   max_tokens: 2000,
 
   // Model-specific settings
@@ -28,6 +33,14 @@ const aiConfig = {
     'gpt-4-32k': {
       maxTokens: 32768,
       costPer1kTokens: { input: 0.06, output: 0.12 }
+    },
+    'gpt-4o': {
+      maxTokens: 128000,
+      costPer1kTokens: { input: 0.005, output: 0.015 }
+    },
+    'gpt-4o-mini': {
+      maxTokens: 128000,
+      costPer1kTokens: { input: 0.00015, output: 0.0006 }
     }
   }
 };

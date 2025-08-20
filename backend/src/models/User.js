@@ -21,8 +21,29 @@ const userSchema = new mongoose.Schema({
   },
   twoFactorSecret: {
     type: String,
-    required: true,
+    required: function() { return !this.googleId; }, // Only required for non-Google users
     select: false // Don't include in queries by default
+  },
+  // Google OAuth fields
+  googleId: {
+    type: String,
+    sparse: true,
+    unique: true
+  },
+  email: {
+    type: String,
+    sparse: true,
+    unique: true,
+    lowercase: true,
+    trim: true
+  },
+  avatar: {
+    type: String
+  },
+  authProvider: {
+    type: String,
+    enum: ['local', 'google'],
+    default: 'local'
   },
   role: {
     type: String,

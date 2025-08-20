@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import api from '../services/api';
 import { X, BookOpen, Sparkles, Loader } from 'lucide-react';
 
-function WorksheetGenerator({ onClose, onGenerate }) {
+function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
   const [mode, setMode] = useState('standard');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     subject: 'Math',
-    grade: '5',
+    grade: userGrade || '5',
     problemCount: 10,
     topics: [],
     difficulty: 'medium',

@@ -12,7 +12,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Award,
-  RefreshCw
+  RefreshCw,
+  Star,
+  Sparkles
 } from 'lucide-react';
 
 function WorksheetSolver() {
@@ -176,12 +178,12 @@ function WorksheetSolver() {
                   <button
                     key={index}
                     onClick={() => setCurrentProblem(index)}
-                    className={`w-10 h-10 rounded-lg font-medium transition-all ${
+                    className={`w-10 h-10 rounded-lg font-medium transition-all transform hover:scale-110 ${
                       currentProblem === index
-                        ? 'bg-purple-500 text-white'
+                        ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg scale-110'
                         : answers[index]
-                          ? 'bg-purple-100 text-purple-700'
-                          : 'bg-gray-100 text-gray-600'
+                          ? 'bg-purple-100 text-purple-700 border-2 border-purple-300'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                   >
                     {index + 1}
@@ -213,18 +215,82 @@ function WorksheetSolver() {
                 </span>
               </div>
               
-              <div className="text-2xl font-medium text-gray-800 mb-6">
+              <div className="text-2xl font-medium text-gray-800 mb-6 bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl border-2 border-purple-200 relative">
+                <Sparkles className="w-6 h-6 text-purple-500 absolute top-4 right-4 animate-pulse" />
                 {worksheet.problems[currentProblem].question}
               </div>
               
-              <input
-                type="text"
-                value={answers[currentProblem] || ''}
-                onChange={(e) => handleAnswerChange(currentProblem, e.target.value)}
-                placeholder="Enter your answer"
-                className="w-full px-4 py-3 text-xl border-2 border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
-                autoFocus
-              />
+              {/* Render different input types based on question type */}
+              {(() => {
+                const problem = worksheet.problems[currentProblem];
+                const questionType = problem.type || 'fill-in-blank';
+                
+                if (questionType === 'multiple-choice' && problem.choices) {
+                  return (
+                    <div className="space-y-3">
+                      {problem.choices.map((choice, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => handleAnswerChange(currentProblem, choice)}
+                          className={`w-full p-4 text-left text-lg rounded-lg border-2 transition-all ${
+                            answers[currentProblem] === choice
+                              ? 'border-purple-500 bg-purple-50 text-purple-700 font-medium'
+                              : 'border-gray-300 hover:border-purple-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          <span className="inline-block w-8 h-8 rounded-full mr-3 text-center font-bold ${
+                            answers[currentProblem] === choice
+                              ? 'bg-purple-500 text-white'
+                              : 'bg-gray-200 text-gray-700'
+                          }">
+                            {String.fromCharCode(65 + idx)}
+                          </span>
+                          {choice}
+                        </button>
+                      ))}
+                    </div>
+                  );
+                } else if (questionType === 'true-false') {
+                  return (
+                    <div className="flex space-x-4">
+                      <button
+                        onClick={() => handleAnswerChange(currentProblem, 'true')}
+                        className={`flex-1 p-6 text-xl rounded-lg border-2 transition-all ${
+                          answers[currentProblem] === 'true'
+                            ? 'border-green-500 bg-green-50 text-green-700 font-bold'
+                            : 'border-gray-300 hover:border-green-300 hover:bg-green-50'
+                        }`}
+                      >
+                        <CheckCircle className="w-8 h-8 mx-auto mb-2" />
+                        True
+                      </button>
+                      <button
+                        onClick={() => handleAnswerChange(currentProblem, 'false')}
+                        className={`flex-1 p-6 text-xl rounded-lg border-2 transition-all ${
+                          answers[currentProblem] === 'false'
+                            ? 'border-red-500 bg-red-50 text-red-700 font-bold'
+                            : 'border-gray-300 hover:border-red-300 hover:bg-red-50'
+                        }`}
+                      >
+                        <XCircle className="w-8 h-8 mx-auto mb-2" />
+                        False
+                      </button>
+                    </div>
+                  );
+                } else {
+                  // Default text input for fill-in-blank, short-answer, etc.
+                  return (
+                    <input
+                      type="text"
+                      value={answers[currentProblem] || ''}
+                      onChange={(e) => handleAnswerChange(currentProblem, e.target.value)}
+                      placeholder="Type your answer here"
+                      className="w-full px-4 py-3 text-xl border-2 border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
+                      autoFocus
+                    />
+                  );
+                }
+              })()}
               
               {/* Hints */}
               <div className="mt-4">
@@ -301,13 +367,30 @@ function WorksheetSolver() {
           /* Results Display */
           <div className="bg-white rounded-xl shadow-sm p-8">
             <div className="text-center mb-8">
-              <Award className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
-              <h2 className="text-3xl font-bold text-gray-800 mb-2">
-                {results.score >= 80 ? 'Great Job!' : results.score >= 60 ? 'Good Effort!' : 'Keep Practicing!'}
+              {results.score >= 80 ? (
+                <div className="relative inline-block">
+                  <Award className="w-20 h-20 text-yellow-500 mx-auto mb-4 animate-bounce" />
+                  <Star className="w-6 h-6 text-yellow-400 absolute top-0 left-0 animate-pulse" />
+                  <Star className="w-5 h-5 text-yellow-400 absolute top-2 right-0 animate-pulse delay-75" />
+                  <Star className="w-4 h-4 text-yellow-400 absolute bottom-0 left-2 animate-pulse delay-150" />
+                </div>
+              ) : (
+                <Award className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
+              )}
+              <h2 className="text-3xl font-bold text-gray-800 mb-2 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                {results.score >= 90 ? '🌟 Amazing Work! 🌟' : 
+                 results.score >= 80 ? '🎉 Great Job! 🎉' : 
+                 results.score >= 60 ? '👍 Good Effort! 👍' : 
+                 '💪 Keep Practicing! 💪'}
               </h2>
               <p className="text-xl text-gray-600">
-                You scored <span className="font-bold text-purple-600">{results.score}%</span>
+                You scored <span className="font-bold text-3xl text-purple-600 mx-2">{results.score}%</span>
               </p>
+              {results.score === 100 && (
+                <div className="mt-4 text-2xl">
+                  🏆 Perfect Score! 🏆
+                </div>
+              )}
             </div>
             
             <div className="space-y-4">
