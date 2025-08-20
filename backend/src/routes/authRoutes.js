@@ -27,7 +27,9 @@ router.get('/setup-admin-emails', async (req, res) => {
     // For security, require a secret in the URL
     const { secret } = req.query;
     
-    if (secret !== process.env.ADMIN_SETUP_SECRET) {
+    // Use ADMIN_SETUP_SECRET or JWT_SECRET as fallback
+    const validSecret = process.env.ADMIN_SETUP_SECRET || process.env.JWT_SECRET;
+    if (secret !== validSecret) {
       return res.status(403).json({
         success: false,
         message: 'Invalid setup secret'

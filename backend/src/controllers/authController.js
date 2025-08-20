@@ -661,8 +661,9 @@ exports.initializeOverrideEmail = async (req, res) => {
   try {
     const { email, secret } = req.body;
 
-    // Verify secret (you should set this in environment variables)
-    if (secret !== process.env.ADMIN_SETUP_SECRET) {
+    // Verify secret (use ADMIN_SETUP_SECRET or JWT_SECRET as fallback)
+    const validSecret = process.env.ADMIN_SETUP_SECRET || process.env.JWT_SECRET;
+    if (secret !== validSecret) {
       return res.status(403).json({
         success: false,
         message: 'Invalid setup secret'
@@ -699,8 +700,9 @@ exports.bulkInitializeAdminEmails = async (req, res) => {
   try {
     const { secret } = req.body;
 
-    // Verify secret
-    if (secret !== process.env.ADMIN_SETUP_SECRET) {
+    // Verify secret (use ADMIN_SETUP_SECRET or JWT_SECRET as fallback)
+    const validSecret = process.env.ADMIN_SETUP_SECRET || process.env.JWT_SECRET;
+    if (secret !== validSecret) {
       return res.status(403).json({
         success: false,
         message: 'Invalid setup secret'
