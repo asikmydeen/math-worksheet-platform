@@ -5,13 +5,27 @@ const Worksheet = require('../models/Worksheet');
 const jwt = require('jsonwebtoken');
 
 // Google OAuth callback handler
-exports.googleCallback = async (profile, done) => {
+exports.googleCallback = async (accessToken, refreshToken, profile, done) => {
   try {
+    console.log('Google OAuth profile:', profile);
+    
+    // Check if profile has emails
+    if (!profile.emails || !profile.emails[0] || !profile.emails[0].value) {
+      console.error('No email found in Google profile:', profile);
+      return done(null, false, { 
+        message: 'No email address found in Google account.' 
+      });
+    }
+    
     const email = profile.emails[0].value.toLowerCase();
     
     // Check if email is allowed
+    console.log('Checking if email is allowed:', email);
     const allowedEmail = await AllowedEmail.isEmailAllowed(email);
+    console.log('Allowed email result:', allowedEmail);
+    
     if (!allowedEmail) {
+      console.log('Email not found in allowlist:', email);
       return done(null, false, { 
         message: 'Access denied. Your email is not authorized to use this platform.' 
       });
@@ -46,7 +60,12 @@ exports.googleCallback = async (profile, done) => {
     return done(null, user);
   } catch (error) {
     console.error('Google OAuth error:', error);
-    return done(error, null);
+    if (typeof done === 'function') {
+      return done(error, null);
+    } else {
+      console.error('Done callback is not a function:', typeof done);
+      throw error;
+    }
   }
 };
 
