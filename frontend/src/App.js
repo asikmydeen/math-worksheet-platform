@@ -38,9 +38,14 @@ function App() {
       setUser(response.data.user);
       
       // Check if user has setup kid profiles
+      console.log('User data:', response.data.user);
+      console.log('hasSetupKidProfiles:', response.data.user.hasSetupKidProfiles);
+      
       if (!response.data.user.hasSetupKidProfiles) {
+        console.log('Setting needsProfileSetup to true');
         setNeedsProfileSetup(true);
       } else {
+        console.log('User has setup profiles, fetching active profile');
         // Fetch active kid profile
         await fetchActiveProfile();
       }
@@ -170,7 +175,10 @@ function App() {
   }
 
   // Show kid profile setup if needed
+  console.log('Rendering check - user:', !!user, 'needsProfileSetup:', needsProfileSetup);
+  
   if (user && needsProfileSetup) {
+    console.log('Showing KidProfileSetup component');
     return (
       <ThemeProvider>
         <AuthContext.Provider value={{ user, token, login, register, logout, loginWithToken, updateUser, activeKidProfile, switchKidProfile }}>

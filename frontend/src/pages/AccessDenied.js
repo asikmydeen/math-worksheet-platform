@@ -47,19 +47,19 @@ function AccessDenied() {
             <AlertTriangle className="w-6 h-6 text-yellow-500 mt-0.5 flex-shrink-0" />
             <div className="text-left">
               <h3 className={`font-semibold ${isDarkMode ? 'text-yellow-300' : 'text-yellow-700'} mb-2`}>
-                Need Access?
+                Ready to Get Started?
               </h3>
               <p className={`text-sm ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'} mb-4`}>
-                PersonalPod Worksheets is currently in private beta and access is restricted to authorized educators.
+                PersonalPod Worksheets helps parents and teachers create personalized learning experiences for kids.
               </p>
               <div className="space-y-2">
                 <p className={`text-sm font-medium ${isDarkMode ? 'text-yellow-300' : 'text-yellow-700'}`}>
-                  To request access:
+                  Choose your plan:
                 </p>
                 <ul className={`text-sm ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'} space-y-1`}>
-                  <li>• Contact your school administrator</li>
-                  <li>• Have them add your email to the allowed list</li>
-                  <li>• Try signing in again after approval</li>
+                  <li>• <strong>Free Trial:</strong> 10 AI-generated worksheets</li>
+                  <li>• <strong>Monthly:</strong> 50 worksheets per month - $9.99</li>
+                  <li>• <strong>Lifetime:</strong> Unlimited access - $299.99 (Best Value!)</li>
                 </ul>
               </div>
             </div>
@@ -89,10 +89,9 @@ function AccessDenied() {
         <div className="flex flex-col space-y-3">
           <Link
             to="/"
-            className="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-semibold hover:shadow-lg transform hover:scale-[1.02] transition-all"
+            className="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-xl font-semibold hover:shadow-lg transform hover:scale-[1.02] transition-all"
           >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Homepage
+            🚀 Get Started - Choose Your Plan
           </Link>
           
           <button
@@ -101,6 +100,14 @@ function AccessDenied() {
           >
             Try Different Account
           </button>
+          
+          <Link
+            to="/"
+            className={`inline-flex items-center justify-center px-4 py-2 text-sm font-medium transition-all ${darkMode.textSecondary} hover:${darkMode.text}`}
+          >
+            <ArrowLeft className="w-3 h-3 mr-1" />
+            Back to Homepage
+          </Link>
         </div>
 
         {/* Footer */}
