@@ -42,12 +42,12 @@ const ProfileSwitcher = ({ currentProfile, onProfileSwitch }) => {
 
   const addNewProfile = () => {
     setIsOpen(false);
-    // Navigate to add profile page or show modal
-    // For now, we'll just show a message
-    toast.success('Add new profile feature coming soon!');
+    // Navigate to kid management page
+    window.location.href = '/kids';
   };
 
-  if (!profiles.length) return null;
+  // Always show the component, even if no profiles exist
+  const hasProfiles = profiles.length > 0;
 
   return (
     <div className="relative">
@@ -58,10 +58,10 @@ const ProfileSwitcher = ({ currentProfile, onProfileSwitch }) => {
                    focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
         <span className="text-xl">
-          {currentProfile?.avatar || '👤'}
+          {hasProfiles ? (currentProfile?.avatar || '👤') : '👶'}
         </span>
         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-          {currentProfile?.name || 'Select Profile'}
+          {hasProfiles ? (currentProfile?.name || 'Select Kid') : 'Add Kids'}
         </span>
         <svg
           className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
@@ -78,10 +78,10 @@ const ProfileSwitcher = ({ currentProfile, onProfileSwitch }) => {
                        border border-gray-200 dark:border-gray-600 z-50">
           <div className="p-2">
             <div className="text-xs font-medium text-gray-500 dark:text-gray-400 px-3 py-2">
-              SWITCH PROFILE
+              {hasProfiles ? 'SWITCH KID PROFILE' : 'KID PROFILES'}
             </div>
             
-            {profiles.map((profile) => (
+            {hasProfiles ? profiles.map((profile) => (
               <button
                 key={profile._id}
                 onClick={() => handleProfileSwitch(profile._id)}
@@ -109,9 +109,17 @@ const ProfileSwitcher = ({ currentProfile, onProfileSwitch }) => {
                   </div>
                 )}
               </button>
-            ))}
+            )) : (
+              <div className="text-center py-6">
+                <div className="text-4xl mb-2">👨‍👩‍👧‍👦</div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  No kid profiles yet.<br />
+                  Add kids to get started!
+                </p>
+              </div>
+            )}
 
-            {profiles.length < 4 && (
+            {(!hasProfiles || profiles.length < 4) && (
               <>
                 <div className="border-t border-gray-200 dark:border-gray-600 my-2"></div>
                 <button
@@ -121,7 +129,7 @@ const ProfileSwitcher = ({ currentProfile, onProfileSwitch }) => {
                            text-blue-600 dark:text-blue-400"
                 >
                   <span className="text-xl">➕</span>
-                  <span className="font-medium">Add New Kid</span>
+                  <span className="font-medium">{hasProfiles ? 'Add Another Kid' : 'Add Your First Kid'}</span>
                 </button>
               </>
             )}

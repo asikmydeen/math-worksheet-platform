@@ -72,7 +72,7 @@ exports.googleCallback = async (accessToken, refreshToken, profile, done) => {
 // Get current user info
 exports.getMe = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.user.id).populate('activeKidProfile');
     if (!user || !user.hasAccess()) {
       return res.status(403).json({
         success: false,
@@ -90,6 +90,8 @@ exports.getMe = async (req, res) => {
         role: user.role,
         grade: user.grade,
         accessLevel: user.accessLevel,
+        hasSetupKidProfiles: user.hasSetupKidProfiles,
+        activeKidProfile: user.activeKidProfile,
         stats: user.stats,
         subscription: user.subscription
       }
@@ -137,6 +139,8 @@ exports.updateProfile = async (req, res) => {
         role: user.role,
         grade: user.grade,
         accessLevel: user.accessLevel,
+        hasSetupKidProfiles: user.hasSetupKidProfiles,
+        activeKidProfile: user.activeKidProfile,
         stats: user.stats,
         subscription: user.subscription
       }
