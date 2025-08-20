@@ -10,6 +10,7 @@ import WorksheetSolver from './pages/WorksheetSolver';
 import WorksheetView from './pages/WorksheetView';
 import Analytics from './pages/Analytics';
 import AdminPanel from './pages/AdminPanel';
+import ComprehensiveAdminDashboard from './pages/ComprehensiveAdminDashboard';
 import KidManagement from './pages/KidManagement';
 import AccessDenied from './pages/AccessDenied';
 import GoogleCallback from './pages/GoogleCallback';
@@ -194,7 +195,7 @@ function App() {
             <Route path="/worksheet/:id/view" element={user ? <WorksheetView /> : <Navigate to="/login" />} />
             <Route path="/analytics" element={user ? <Analytics /> : <Navigate to="/login" />} />
             <Route path="/kids" element={user ? <KidManagement /> : <Navigate to="/login" />} />
-            <Route path="/admin" element={user?.accessLevel === 'admin' ? <AdminPanel /> : <Navigate to="/dashboard" />} />
+            <Route path="/admin" element={user?.accessLevel === 'admin' ? <ComprehensiveAdminDashboard /> : <Navigate to="/dashboard" />} />
           </Routes>
         </Router>
       </AuthContext.Provider>

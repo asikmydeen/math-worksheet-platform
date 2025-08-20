@@ -1,5 +1,7 @@
 const User = require('../models/User');
 const AllowedEmail = require('../models/AllowedEmail');
+const KidProfile = require('../models/KidProfile');
+const Worksheet = require('../models/Worksheet');
 const jwt = require('jsonwebtoken');
 
 // Google OAuth callback handler
@@ -315,6 +317,341 @@ exports.getUserAnalytics = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error fetching user analytics'
+    });
+  }
+};
+
+// Admin: Get all users with detailed information
+exports.getAllUsersDetailed = async (req, res) => {
+  try {
+    const adminUser = await User.findById(req.user.id);
+
+    if (!adminUser || adminUser.accessLevel !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Admin access required'
+      });
+    }
+
+    const { page = 1, limit = 20, search = '', sortBy = 'createdAt', order = 'desc' } = req.query;
+    const skip = (page - 1) * limit;
+
+    // Build search query
+    const query = {};
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    // Get users with kid profiles
+    const users = await User.find(query)
+      .populate({
+        path: 'activeKidProfile',
+        select: 'name grade avatar'
+      })
+      .sort({ [sortBy]: order === 'desc' ? -1 : 1 })
+      .skip(skip)
+      .limit(parseInt(limit))
+      .select('-__v');
+
+    const total = await User.countDocuments(query);
+
+    // Get kid profiles for each user and their worksheet stats
+    const usersWithDetails = await Promise.all(
+      users.map(async (user) => {
+        const kidProfiles = await KidProfile.find({ parentUserId: user._id, isActive: true });
+        const totalKidWorksheets = await Worksheet.countDocuments({ user: user._id });
+        
+        // Get AI usage breakdown by kid
+        const kidUsageBreakdown = await Promise.all(
+          kidProfiles.map(async (kid) => {
+            const worksheetCount = await Worksheet.countDocuments({ 
+              user: user._id, 
+              kidProfile: kid._id 
+            });
+            return {
+              kidId: kid._id,
+              name: kid.name,
+              grade: kid.grade,
+              avatar: kid.avatar,
+              worksheets: worksheetCount,
+              stats: kid.stats
+            };
+          })
+        );
+
+        return {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          accessLevel: user.accessLevel,
+          isActive: user.isActive,
+          subscription: user.subscription,
+          stats: user.stats,
+          activeKidProfile: user.activeKidProfile,
+          hasSetupKidProfiles: user.hasSetupKidProfiles,
+          createdAt: user.createdAt,
+          lastLogin: user.lastLogin,
+          kidProfiles: kidProfiles.map(k => ({
+            _id: k._id,
+            name: k.name,
+            grade: k.grade,
+            avatar: k.avatar,
+            stats: k.stats,
+            createdAt: k.createdAt,
+            lastActiveAt: k.lastActiveAt
+          })),
+          totalKidWorksheets,
+          kidUsageBreakdown
+        };
+      })
+    );
+
+    res.json({
+      success: true,
+      users: usersWithDetails,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    console.error('Get all users detailed error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching detailed user information'
+    });
+  }
+};
+
+// Admin: Update user subscription
+exports.updateUserSubscription = async (req, res) => {
+  try {
+    const adminUser = await User.findById(req.user.id);
+
+    if (!adminUser || adminUser.accessLevel !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Admin access required'
+      });
+    }
+
+    const { userId } = req.params;
+    const { plan, aiRequestsLimit } = req.body;
+
+    const validPlans = ['free', 'monthly', 'annual', 'lifetime'];
+    if (!validPlans.includes(plan)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid subscription plan'
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Update subscription
+    user.subscription.plan = plan;
+    if (aiRequestsLimit !== undefined) {
+      user.subscription.aiRequestsLimit = aiRequestsLimit;
+    } else {
+      // Set default limits based on plan
+      switch(plan) {
+        case 'free':
+          user.subscription.aiRequestsLimit = 10;
+          break;
+        case 'monthly':
+          user.subscription.aiRequestsLimit = 50;
+          break;
+        case 'annual':
+          user.subscription.aiRequestsLimit = 600;
+          break;
+        case 'lifetime':
+          user.subscription.aiRequestsLimit = -1; // Unlimited
+          break;
+      }
+    }
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'User subscription updated successfully',
+      user: {
+        id: user._id,
+        email: user.email,
+        subscription: user.subscription
+      }
+    });
+  } catch (error) {
+    console.error('Update user subscription error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating user subscription'
+    });
+  }
+};
+
+// Admin: Toggle user access (enable/disable)
+exports.toggleUserAccess = async (req, res) => {
+  try {
+    const adminUser = await User.findById(req.user.id);
+
+    if (!adminUser || adminUser.accessLevel !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Admin access required'
+      });
+    }
+
+    const { userId } = req.params;
+    const { isActive } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    user.isActive = isActive;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: `User ${isActive ? 'enabled' : 'disabled'} successfully`,
+      user: {
+        id: user._id,
+        email: user.email,
+        isActive: user.isActive
+      }
+    });
+  } catch (error) {
+    console.error('Toggle user access error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error toggling user access'
+    });
+  }
+};
+
+// Admin: Get detailed platform analytics
+exports.getDetailedAnalytics = async (req, res) => {
+  try {
+    const adminUser = await User.findById(req.user.id);
+
+    if (!adminUser || adminUser.accessLevel !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Admin access required'
+      });
+    }
+
+    // User statistics
+    const totalUsers = await User.countDocuments({});
+    const activeUsers = await User.countDocuments({ isActive: true });
+    const inactiveUsers = await User.countDocuments({ isActive: false });
+
+    // Subscription breakdown
+    const subscriptionStats = await User.aggregate([
+      {
+        $group: {
+          _id: '$subscription.plan',
+          count: { $sum: 1 },
+          totalAiUsed: { $sum: '$subscription.aiRequestsUsed' }
+        }
+      }
+    ]);
+
+    // Kid profile statistics
+    const totalKidProfiles = await KidProfile.countDocuments({ isActive: true });
+    const avgKidsPerUser = await User.aggregate([
+      {
+        $lookup: {
+          from: 'kidprofiles',
+          localField: '_id',
+          foreignField: 'parentUserId',
+          as: 'kidProfiles'
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          avgKids: { $avg: { $size: '$kidProfiles' } }
+        }
+      }
+    ]);
+
+    // Worksheet statistics
+    const totalWorksheets = await Worksheet.countDocuments({});
+    const completedWorksheets = await Worksheet.countDocuments({ status: 'completed' });
+    const worksheetsByGrade = await Worksheet.aggregate([
+      {
+        $group: {
+          _id: '$grade',
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { _id: 1 } }
+    ]);
+
+    // Recent activity
+    const recentUsers = await User.find({ isActive: true })
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .select('name email createdAt lastLogin')
+      .populate({
+        path: 'activeKidProfile',
+        select: 'name grade'
+      });
+
+    const recentWorksheets = await Worksheet.find({})
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .select('title grade subject status createdAt')
+      .populate('user', 'name email')
+      .populate('kidProfile', 'name grade');
+
+    res.json({
+      success: true,
+      analytics: {
+        users: {
+          total: totalUsers,
+          active: activeUsers,
+          inactive: inactiveUsers
+        },
+        subscriptions: subscriptionStats,
+        kidProfiles: {
+          total: totalKidProfiles,
+          avgPerUser: avgKidsPerUser[0]?.avgKids || 0
+        },
+        worksheets: {
+          total: totalWorksheets,
+          completed: completedWorksheets,
+          completionRate: totalWorksheets > 0 ? (completedWorksheets / totalWorksheets * 100).toFixed(1) : 0,
+          byGrade: worksheetsByGrade
+        },
+        recentActivity: {
+          users: recentUsers,
+          worksheets: recentWorksheets
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Get detailed analytics error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching detailed analytics'
     });
   }
 };

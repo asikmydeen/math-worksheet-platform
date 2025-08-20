@@ -8,6 +8,10 @@ const {
   getAllowedEmails,
   removeAllowedEmail,
   getUserAnalytics,
+  getAllUsersDetailed,
+  updateUserSubscription,
+  toggleUserAccess,
+  getDetailedAnalytics,
   initializeOverrideEmail,
   bulkInitializeAdminEmails
 } = require('../controllers/authController');
@@ -52,5 +56,11 @@ router.post('/admin/emails', protect, addAllowedEmails);
 router.get('/admin/emails', protect, getAllowedEmails);
 router.delete('/admin/emails/:emailId', protect, removeAllowedEmail);
 router.get('/admin/analytics', protect, getUserAnalytics);
+
+// Advanced admin routes
+router.get('/admin/users', protect, getAllUsersDetailed);
+router.put('/admin/users/:userId/subscription', protect, updateUserSubscription);
+router.put('/admin/users/:userId/access', protect, toggleUserAccess);
+router.get('/admin/detailed-analytics', protect, getDetailedAnalytics);
 
 module.exports = router;
