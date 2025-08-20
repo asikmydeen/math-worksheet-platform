@@ -22,7 +22,7 @@ const allowedEmailSchema = new mongoose.Schema({
   addedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    required: false // Allow null for system-created entries
   },
   addedAt: {
     type: Date,

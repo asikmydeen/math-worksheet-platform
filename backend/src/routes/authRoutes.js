@@ -21,6 +21,31 @@ const { protect } = require('../middleware/authMiddleware');
 router.post('/initialize-admin', initializeOverrideEmail);
 router.post('/bulk-initialize-admins', bulkInitializeAdminEmails);
 
+// GET endpoint for easy browser-based initialization (temporary - remove after setup)
+router.get('/setup-admin-emails', async (req, res) => {
+  try {
+    // For security, require a secret in the URL
+    const { secret } = req.query;
+    
+    if (secret !== process.env.ADMIN_SETUP_SECRET) {
+      return res.status(403).json({
+        success: false,
+        message: 'Invalid setup secret'
+      });
+    }
+
+    // Call the existing bulk initialization function
+    req.body = { secret };
+    await bulkInitializeAdminEmails(req, res);
+  } catch (error) {
+    console.error('Setup admin emails error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error setting up admin emails'
+    });
+  }
+});
+
 // Google OAuth routes
 router.get('/google',
   passport.authenticate('google', { scope: ['profile', 'email'] })
