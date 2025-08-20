@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import AuthContext from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Worksheets from './pages/Worksheets';
@@ -128,6 +129,7 @@ function App() {
       <AuthContext.Provider value={{ user, token, login, register, logout, loginWithToken, updateUser }}>
         <Router>
           <Routes>
+            <Route path="/" element={user ? <Navigate to="/dashboard" /> : <LandingPage />} />
             <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
             <Route path="/auth/google/success" element={<GoogleCallback />} />
             <Route path="/dashboard" element={user ? <Dashboard /> : <Navigate to="/login" />} />
@@ -135,7 +137,6 @@ function App() {
             <Route path="/worksheet/:id" element={user ? <WorksheetSolver /> : <Navigate to="/login" />} />
             <Route path="/worksheet/:id/view" element={user ? <WorksheetView /> : <Navigate to="/login" />} />
             <Route path="/analytics" element={user ? <Analytics /> : <Navigate to="/login" />} />
-            <Route path="/" element={<Navigate to={user ? "/dashboard" : "/login"} />} />
           </Routes>
         </Router>
       </AuthContext.Provider>
