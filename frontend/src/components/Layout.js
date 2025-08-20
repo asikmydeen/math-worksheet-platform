@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import ProfileSwitcher from './ProfileSwitcher';
 import {
   Calculator,
   Home,
@@ -10,35 +11,28 @@ import {
   LogOut,
   User,
   Users,
+  Baby,
   Moon,
   Sun,
   Edit2
 } from 'lucide-react';
 
 function Layout({ children }) {
-  const { user, logout, updateUser } = useAuth();
+  const { user, logout, updateUser, activeKidProfile, switchKidProfile } = useAuth();
   const { isDarkMode, toggleDarkMode } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
-  const [isEditingGrade, setIsEditingGrade] = useState(false);
-  const [newGrade, setNewGrade] = useState(user?.grade || 5);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
-  const handleGradeSave = async () => {
-    const result = await updateUser({ grade: parseInt(newGrade) });
-    if (result.success) {
-      setIsEditingGrade(false);
-    }
-  };
-
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'Worksheets', href: '/worksheets', icon: FileText },
     { name: 'Analytics', href: '/analytics', icon: BarChart },
+    { name: 'Kids', href: '/kids', icon: Baby },
     ...(user?.accessLevel === 'admin' ? [{ name: 'Admin', href: '/admin', icon: Users }] : [])
   ];
 
@@ -97,48 +91,16 @@ function Layout({ children }) {
                 {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
               </button>
 
-              {/* User info and grade */}
+              {/* Profile Switcher */}
+              <ProfileSwitcher 
+                currentProfile={activeKidProfile}
+                onProfileSwitch={switchKidProfile}
+              />
+
+              {/* User info */}
               <div className="flex items-center space-x-2 text-sm">
                 <User className={`w-4 h-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
                 <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>{user?.name}</span>
-                {user?.grade && (
-                  <div className="flex items-center space-x-1">
-                    <span className={isDarkMode ? 'text-gray-400' : 'text-gray-500'}>•</span>
-                    {isEditingGrade ? (
-                      <div className="flex items-center space-x-1">
-                        <span className={isDarkMode ? 'text-gray-400' : 'text-gray-500'}>Grade</span>
-                        <input
-                          type="number"
-                          min="1"
-                          max="12"
-                          value={newGrade}
-                          onChange={(e) => setNewGrade(e.target.value)}
-                          onBlur={handleGradeSave}
-                          onKeyPress={(e) => e.key === 'Enter' && handleGradeSave()}
-                          className={`w-12 px-1 py-0.5 text-sm rounded border ${
-                            isDarkMode 
-                              ? 'bg-gray-700 border-gray-600 text-gray-200' 
-                              : 'bg-white border-gray-300 text-gray-700'
-                          } focus:outline-none focus:ring-2 focus:ring-purple-500`}
-                          autoFocus
-                        />
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => {
-                          setNewGrade(user.grade);
-                          setIsEditingGrade(true);
-                        }}
-                        className={`flex items-center space-x-1 hover:opacity-75 transition-opacity ${
-                          isDarkMode ? 'text-gray-300' : 'text-gray-600'
-                        }`}
-                      >
-                        <span>Grade {user.grade}</span>
-                        <Edit2 className="w-3 h-3" />
-                      </button>
-                    )}
-                  </div>
-                )}
               </div>
 
               <button

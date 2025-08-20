@@ -10,14 +10,18 @@ import WorksheetSolver from './pages/WorksheetSolver';
 import WorksheetView from './pages/WorksheetView';
 import Analytics from './pages/Analytics';
 import AdminPanel from './pages/AdminPanel';
+import KidManagement from './pages/KidManagement';
 import AccessDenied from './pages/AccessDenied';
 import GoogleCallback from './pages/GoogleCallback';
+import KidProfileSetup from './components/KidProfileSetup';
 import api from './services/api';
 
 function App() {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
+  const [activeKidProfile, setActiveKidProfile] = useState(null);
+  const [needsProfileSetup, setNeedsProfileSetup] = useState(false);
 
   useEffect(() => {
     if (token) {
@@ -31,11 +35,30 @@ function App() {
     try {
       const response = await api.get('/auth/me');
       setUser(response.data.user);
+      
+      // Check if user has setup kid profiles
+      if (!response.data.user.hasSetupKidProfiles) {
+        setNeedsProfileSetup(true);
+      } else {
+        // Fetch active kid profile
+        await fetchActiveProfile();
+      }
     } catch (error) {
       console.error('Auth error:', error);
       logout();
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchActiveProfile = async () => {
+    try {
+      const response = await api.get('/kid-profiles/active');
+      if (response.data.success) {
+        setActiveKidProfile(response.data.activeProfile);
+      }
+    } catch (error) {
+      console.error('Failed to fetch active profile:', error);
     }
   };
 
@@ -86,6 +109,14 @@ function App() {
     try {
       const response = await api.get('/auth/me');
       setUser(response.data.user);
+      
+      // Check if user needs profile setup
+      if (!response.data.user.hasSetupKidProfiles) {
+        setNeedsProfileSetup(true);
+      } else {
+        await fetchActiveProfile();
+      }
+      
       return { success: true };
     } catch (error) {
       logout();
@@ -96,6 +127,8 @@ function App() {
   const logout = () => {
     setToken(null);
     setUser(null);
+    setActiveKidProfile(null);
+    setNeedsProfileSetup(false);
     localStorage.removeItem('token');
     delete api.defaults.headers.common['Authorization'];
   };
@@ -115,6 +148,15 @@ function App() {
     }
   };
 
+  const handleProfileSetupComplete = async () => {
+    setNeedsProfileSetup(false);
+    await fetchUserInfo(); // Refresh user and active profile
+  };
+
+  const switchKidProfile = (newProfile) => {
+    setActiveKidProfile(newProfile);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -126,9 +168,20 @@ function App() {
     );
   }
 
+  // Show kid profile setup if needed
+  if (user && needsProfileSetup) {
+    return (
+      <ThemeProvider>
+        <AuthContext.Provider value={{ user, token, login, register, logout, loginWithToken, updateUser, activeKidProfile, switchKidProfile }}>
+          <KidProfileSetup onComplete={handleProfileSetupComplete} />
+        </AuthContext.Provider>
+      </ThemeProvider>
+    );
+  }
+
   return (
     <ThemeProvider>
-      <AuthContext.Provider value={{ user, token, login, register, logout, loginWithToken, updateUser }}>
+      <AuthContext.Provider value={{ user, token, login, register, logout, loginWithToken, updateUser, activeKidProfile, switchKidProfile }}>
         <Router>
           <Routes>
             <Route path="/" element={user ? <Navigate to="/dashboard" /> : <LandingPage />} />
@@ -140,6 +193,7 @@ function App() {
             <Route path="/worksheet/:id" element={user ? <WorksheetSolver /> : <Navigate to="/login" />} />
             <Route path="/worksheet/:id/view" element={user ? <WorksheetView /> : <Navigate to="/login" />} />
             <Route path="/analytics" element={user ? <Analytics /> : <Navigate to="/login" />} />
+            <Route path="/kids" element={user ? <KidManagement /> : <Navigate to="/login" />} />
             <Route path="/admin" element={user?.accessLevel === 'admin' ? <AdminPanel /> : <Navigate to="/dashboard" />} />
           </Routes>
         </Router>

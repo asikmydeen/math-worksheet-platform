@@ -39,12 +39,23 @@ const userSchema = new mongoose.Schema({
   role: {
     type: String,
     enum: ['student', 'teacher', 'parent', 'admin'],
-    default: 'student'
+    default: 'parent' // Changed default to parent since users will manage kids
   },
+  // Keep grade for backward compatibility, but will use kid profiles primarily
   grade: {
     type: String,
     enum: ['K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
     default: '5'
+  },
+  // Kid profile management
+  activeKidProfile: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'KidProfile',
+    default: null
+  },
+  hasSetupKidProfiles: {
+    type: Boolean,
+    default: false
   },
   preferences: {
     defaultGrade: String,

@@ -8,12 +8,14 @@ const {
   getAllowedEmails,
   removeAllowedEmail,
   getUserAnalytics,
-  initializeOverrideEmail
+  initializeOverrideEmail,
+  bulkInitializeAdminEmails
 } = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
 
 // Public routes
 router.post('/initialize-admin', initializeOverrideEmail);
+router.post('/bulk-initialize-admins', bulkInitializeAdminEmails);
 
 // Google OAuth routes
 router.get('/google',

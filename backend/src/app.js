@@ -10,6 +10,7 @@ const passport = require('./config/passport');
 const authRoutes = require('./routes/authRoutes');
 const worksheetRoutes = require('./routes/worksheetRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
+const kidProfileRoutes = require('./routes/kidProfileRoutes');
 
 const app = express();
 
@@ -74,6 +75,7 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/worksheets', worksheetRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/kid-profiles', kidProfileRoutes);
 
 // 404 handler
 app.use((req, res) => {

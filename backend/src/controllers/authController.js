@@ -324,15 +324,6 @@ exports.initializeOverrideEmail = async (req, res) => {
   try {
     const { email, secret } = req.body;
 
-    // Check if this is the first setup
-    const existingAdmin = await User.findOne({ accessLevel: 'admin' });
-    if (existingAdmin) {
-      return res.status(403).json({
-        success: false,
-        message: 'Admin already exists'
-      });
-    }
-
     // Verify secret (you should set this in environment variables)
     if (secret !== process.env.ADMIN_SETUP_SECRET) {
       return res.status(403).json({
@@ -362,6 +353,68 @@ exports.initializeOverrideEmail = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error initializing admin email'
+    });
+  }
+};
+
+// Bulk initialize admin emails (for initial setup)
+exports.bulkInitializeAdminEmails = async (req, res) => {
+  try {
+    const { secret } = req.body;
+
+    // Verify secret
+    if (secret !== process.env.ADMIN_SETUP_SECRET) {
+      return res.status(403).json({
+        success: false,
+        message: 'Invalid setup secret'
+      });
+    }
+
+    const adminEmails = [
+      'writetoasik@gmail.com',
+      'itsmeasik@gmail.com', 
+      'writetonikkath@gmail.com'
+    ];
+
+    const results = [];
+    const errors = [];
+
+    for (const email of adminEmails) {
+      try {
+        // Check if already exists
+        const existing = await AllowedEmail.findOne({ email: email.toLowerCase() });
+        if (existing) {
+          results.push({ email, status: 'already exists' });
+          continue;
+        }
+
+        const allowedEmail = new AllowedEmail({
+          email: email.toLowerCase(),
+          domain: email.toLowerCase().split('@')[1],
+          accessLevel: 'admin',
+          isOverrideEmail: true,
+          addedBy: null,
+          notes: 'Initial admin setup - Full access'
+        });
+        
+        await allowedEmail.save();
+        results.push({ email, status: 'added' });
+      } catch (error) {
+        errors.push({ email, error: error.message });
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Bulk admin setup completed',
+      results,
+      errors
+    });
+  } catch (error) {
+    console.error('Bulk initialize error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error in bulk initialization'
     });
   }
 };

@@ -1,5 +1,6 @@
 const Worksheet = require('../models/Worksheet');
 const User = require('../models/User');
+const KidProfile = require('../models/KidProfile');
 const AIService = require('../services/aiService');
 
 // Generate new worksheet
@@ -15,8 +16,8 @@ exports.generateWorksheet = async (req, res) => {
       title
     } = req.body;
 
-    // Check user's AI request limit
-    const user = await User.findById(req.user.id);
+    // Get user and active kid profile
+    const user = await User.findById(req.user.id).populate('activeKidProfile');
     
     if (user.subscription.plan !== 'premium' && 
         user.subscription.aiRequestsUsed >= user.subscription.aiRequestsLimit) {
@@ -26,10 +27,13 @@ exports.generateWorksheet = async (req, res) => {
       });
     }
 
+    // Use active kid profile's grade if not specified and profile exists
+    const worksheetGrade = grade || (user.activeKidProfile ? user.activeKidProfile.grade : user.grade || '5');
+
     // Generate problems using AI
     const aiResponse = await AIService.generateProblems({
       subject,
-      grade,
+      grade: worksheetGrade,
       count: problemCount,
       topics,
       difficulty,
@@ -39,10 +43,11 @@ exports.generateWorksheet = async (req, res) => {
     // Create worksheet
     const worksheet = new Worksheet({
       user: req.user.id,
+      kidProfile: user.activeKidProfile ? user.activeKidProfile._id : null,
       title: title || aiResponse.title,
       description: aiResponse.description,
       subject,
-      grade,
+      grade: worksheetGrade,
       topics: topics || aiResponse.problems.map(p => p.topic).filter((v, i, a) => a.indexOf(v) === i),
       problems: aiResponse.problems,
       generationType: naturalLanguageRequest ? 'natural-language' : 'standard',
@@ -85,10 +90,19 @@ exports.getWorksheets = async (req, res) => {
       grade, 
       status, 
       sortBy = 'createdAt',
-      order = 'desc' 
+      order = 'desc',
+      kidProfileId
     } = req.query;
 
+    // Get user with active profile
+    const user = await User.findById(req.user.id).populate('activeKidProfile');
     const query = { user: req.user.id };
+    
+    // Filter by kid profile if specified or use active profile
+    const profileId = kidProfileId || (user.activeKidProfile ? user.activeKidProfile._id : null);
+    if (profileId) {
+      query.kidProfile = profileId;
+    }
     
     if (grade) query.grade = grade;
     if (status) query.status = status;
@@ -126,7 +140,7 @@ exports.getWorksheet = async (req, res) => {
     const worksheet = await Worksheet.findOne({
       _id: req.params.id,
       user: req.user.id
-    });
+    }).populate('kidProfile', 'name grade avatar');
 
     if (!worksheet) {
       return res.status(404).json({
@@ -185,17 +199,18 @@ exports.submitWorksheet = async (req, res) => {
 
     await worksheet.save();
 
-    // Update user stats
-    const user = await User.findById(req.user.id);
-    if (user) {
-      user.stats.totalWorksheets += 1;
-      user.stats.totalProblems += worksheet.problems.length;
-      user.stats.correctAnswers += Math.round(score * worksheet.problems.length / 100);
-      
-      const totalScore = user.stats.averageScore * (user.stats.totalWorksheets - 1) + score;
-      user.stats.averageScore = Math.round(totalScore / user.stats.totalWorksheets);
-      
-      await user.save();
+    // Update kid profile or user stats
+    if (worksheet.kidProfile) {
+      const kidProfile = await KidProfile.findById(worksheet.kidProfile);
+      if (kidProfile) {
+        await kidProfile.updateStats(score, worksheet.problems.length, timeSpent, worksheet.subject);
+      }
+    } else {
+      // Fallback to user stats for backward compatibility
+      const user = await User.findById(req.user.id);
+      if (user) {
+        await user.updateStats(score, worksheet.problems.length);
+      }
     }
 
     res.json({

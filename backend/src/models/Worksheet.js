@@ -48,6 +48,11 @@ const worksheetSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  kidProfile: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'KidProfile',
+    default: null
+  },
   title: {
     type: String,
     required: true,
