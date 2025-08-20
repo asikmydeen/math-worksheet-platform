@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
 import api from '../services/api';
 import { X, BookOpen, Sparkles, Loader } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
+import { useDarkModeClasses } from './DarkModeWrapper';
 
 function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
+  const { isDarkMode } = useTheme();
+  const darkMode = useDarkModeClasses();
   const [mode, setMode] = useState('standard');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -67,16 +71,16 @@ function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+      <div className={`${darkMode.card} rounded-2xl shadow-2xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto`}>
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">Generate New Worksheet</h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
+          <h2 className={`text-2xl font-bold ${darkMode.text}`}>Generate New Worksheet</h2>
+          <button onClick={onClose} className={`p-2 ${darkMode.cardHover} rounded-lg`}>
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-100 border border-red-300 text-red-700 rounded-lg">
+          <div className={`mb-4 p-3 ${isDarkMode ? 'bg-red-900/20 border-red-800 text-red-400' : 'bg-red-100 border-red-300 text-red-700'} rounded-lg`}>
             {error}
           </div>
         )}
@@ -88,7 +92,7 @@ function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
               className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${
                 mode === 'standard'
                   ? 'bg-purple-500 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  : isDarkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
               <BookOpen className="w-4 h-4 inline mr-2" />
@@ -99,7 +103,7 @@ function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
               className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${
                 mode === 'natural'
                   ? 'bg-purple-500 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  : isDarkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
               <Sparkles className="w-4 h-4 inline mr-2" />
@@ -112,11 +116,11 @@ function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+                <label className={`block text-sm font-medium ${darkMode.text} mb-1`}>Subject</label>
                 <select
                   value={formData.subject}
                   onChange={(e) => setFormData({...formData, subject: e.target.value, topics: []})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
+                  className={`w-full px-3 py-2 border ${darkMode.inputBorder} ${darkMode.inputBg} ${darkMode.inputText} rounded-lg focus:outline-none focus:border-purple-500`}
                 >
                   {subjects.map(subject => (
                     <option key={subject} value={subject}>{subject}</option>
@@ -125,11 +129,11 @@ function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Grade Level</label>
+                <label className={`block text-sm font-medium ${darkMode.text} mb-1`}>Grade Level</label>
                 <select
                   value={formData.grade}
                   onChange={(e) => setFormData({...formData, grade: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
+                  className={`w-full px-3 py-2 border ${darkMode.inputBorder} ${darkMode.inputBg} ${darkMode.inputText} rounded-lg focus:outline-none focus:border-purple-500`}
                 >
                   <option value="K">Kindergarten</option>
                   {[...Array(12)].map((_, i) => (
@@ -143,11 +147,11 @@ function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Number of Problems</label>
+                <label className={`block text-sm font-medium ${darkMode.text} mb-1`}>Number of Problems</label>
                 <select
                   value={formData.problemCount}
                   onChange={(e) => setFormData({...formData, problemCount: parseInt(e.target.value)})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
+                  className={`w-full px-3 py-2 border ${darkMode.inputBorder} ${darkMode.inputBg} ${darkMode.inputText} rounded-lg focus:outline-none focus:border-purple-500`}
                 >
                   <option value="5">5 Problems</option>
                   <option value="10">10 Problems</option>
@@ -158,11 +162,11 @@ function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Difficulty</label>
+                <label className={`block text-sm font-medium ${darkMode.text} mb-1`}>Difficulty</label>
                 <select
                   value={formData.difficulty}
                   onChange={(e) => setFormData({...formData, difficulty: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
+                  className={`w-full px-3 py-2 border ${darkMode.inputBorder} ${darkMode.inputBg} ${darkMode.inputText} rounded-lg focus:outline-none focus:border-purple-500`}
                 >
                   <option value="easy">Easy</option>
                   <option value="medium">Medium</option>
@@ -173,10 +177,10 @@ function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Topics (Optional)</label>
-              <div className="grid grid-cols-3 gap-2 max-h-32 overflow-y-auto p-2 border border-gray-200 rounded-lg">
+              <label className={`block text-sm font-medium ${darkMode.text} mb-1`}>Topics (Optional)</label>
+              <div className={`grid grid-cols-3 gap-2 max-h-32 overflow-y-auto p-2 border ${darkMode.border} ${darkMode.inputBg} rounded-lg`}>
                 {getTopicsForSubject().map(topic => (
-                  <label key={topic} className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
+                  <label key={topic} className={`flex items-center space-x-2 cursor-pointer ${darkMode.cardHover} p-1 rounded`}>
                     <input
                       type="checkbox"
                       checked={formData.topics.includes(topic)}
@@ -189,20 +193,20 @@ function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
                       }}
                       className="rounded text-purple-500 focus:ring-purple-500"
                     />
-                    <span className="text-sm">{topic}</span>
+                    <span className={`text-sm ${darkMode.text}`}>{topic}</span>
                   </label>
                 ))}
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Worksheet Title (Optional)</label>
+              <label className={`block text-sm font-medium ${darkMode.text} mb-1`}>Worksheet Title (Optional)</label>
               <input
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData({...formData, title: e.target.value})}
                 placeholder={`e.g., ${formData.subject} Practice for Week 5`}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
+                className={`w-full px-3 py-2 border ${darkMode.inputBorder} ${darkMode.inputBg} ${darkMode.inputText} rounded-lg focus:outline-none focus:border-purple-500`}
               />
             </div>
           </div>
@@ -210,11 +214,11 @@ function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+                <label className={`block text-sm font-medium ${darkMode.text} mb-1`}>Subject</label>
                 <select
                   value={formData.subject}
                   onChange={(e) => setFormData({...formData, subject: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
+                  className={`w-full px-3 py-2 border ${darkMode.inputBorder} ${darkMode.inputBg} ${darkMode.inputText} rounded-lg focus:outline-none focus:border-purple-500`}
                 >
                   {subjects.map(subject => (
                     <option key={subject} value={subject}>{subject}</option>
@@ -223,11 +227,11 @@ function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Grade Level</label>
+                <label className={`block text-sm font-medium ${darkMode.text} mb-1`}>Grade Level</label>
                 <select
                   value={formData.grade}
                   onChange={(e) => setFormData({...formData, grade: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
+                  className={`w-full px-3 py-2 border ${darkMode.inputBorder} ${darkMode.inputBg} ${darkMode.inputText} rounded-lg focus:outline-none focus:border-purple-500`}
                 >
                   <option value="K">Kindergarten</option>
                   {[...Array(12)].map((_, i) => (
@@ -240,7 +244,7 @@ function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className={`block text-sm font-medium ${darkMode.text} mb-1`}>
                 Describe what you want in natural language
               </label>
               <textarea
@@ -295,7 +299,7 @@ function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
           <button
             onClick={onClose}
             disabled={loading}
-            className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-all disabled:opacity-50"
+            className={`px-6 py-3 ${isDarkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'} rounded-lg font-semibold transition-all disabled:opacity-50`}
           >
             Cancel
           </button>

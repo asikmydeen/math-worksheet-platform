@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import Layout from '../components/Layout';
 import WorksheetGenerator from '../components/WorksheetGenerator';
+import { useDarkModeClasses } from '../components/DarkModeWrapper';
 import api from '../services/api';
 import { 
   Plus, 
@@ -17,6 +19,8 @@ import {
 
 function Dashboard() {
   const { user } = useAuth();
+  const { isDarkMode } = useTheme();
+  const darkMode = useDarkModeClasses();
   const navigate = useNavigate();
   const [showGenerator, setShowGenerator] = useState(false);
   const [stats, setStats] = useState(null);
@@ -62,7 +66,7 @@ function Dashboard() {
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading dashboard...</p>
+            <p className={`mt-4 ${darkMode.textSecondary}`}>Loading dashboard...</p>
           </div>
         </div>
       </Layout>
@@ -82,11 +86,11 @@ function Dashboard() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl p-6 shadow-sm">
+          <div className={`${darkMode.card} rounded-xl p-6 shadow-sm`}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total Worksheets</p>
-                <p className="text-2xl font-bold text-gray-800">
+                <p className={`text-sm ${darkMode.textSecondary}`}>Total Worksheets</p>
+                <p className={`text-2xl font-bold ${darkMode.text}`}>
                   {stats?.userStats?.totalWorksheets || 0}
                 </p>
               </div>
@@ -94,11 +98,11 @@ function Dashboard() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl p-6 shadow-sm">
+          <div className={`${darkMode.card} rounded-xl p-6 shadow-sm`}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Average Score</p>
-                <p className="text-2xl font-bold text-gray-800">
+                <p className={`text-sm ${darkMode.textSecondary}`}>Average Score</p>
+                <p className={`text-2xl font-bold ${darkMode.text}`}>
                   {stats?.userStats?.averageScore || 0}%
                 </p>
               </div>
@@ -106,11 +110,11 @@ function Dashboard() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl p-6 shadow-sm">
+          <div className={`${darkMode.card} rounded-xl p-6 shadow-sm`}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Current Streak</p>
-                <p className="text-2xl font-bold text-gray-800">
+                <p className={`text-sm ${darkMode.textSecondary}`}>Current Streak</p>
+                <p className={`text-2xl font-bold ${darkMode.text}`}>
                   {stats?.userStats?.streak?.current || 0} days
                 </p>
               </div>
@@ -118,11 +122,11 @@ function Dashboard() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl p-6 shadow-sm">
+          <div className={`${darkMode.card} rounded-xl p-6 shadow-sm`}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">AI Requests</p>
-                <p className="text-2xl font-bold text-gray-800">
+                <p className={`text-sm ${darkMode.textSecondary}`}>AI Requests</p>
+                <p className={`text-2xl font-bold ${darkMode.text}`}>
                   {stats?.subscription?.aiRequestsUsed || 0}/{stats?.subscription?.aiRequestsLimit || 50}
                 </p>
               </div>
@@ -132,42 +136,42 @@ function Dashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="bg-white rounded-xl p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Quick Actions</h2>
+        <div className={`${darkMode.card} rounded-xl p-6 shadow-sm`}>
+          <h2 className={`text-lg font-semibold ${darkMode.text} mb-4`}>Quick Actions</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <button
               onClick={() => setShowGenerator(true)}
-              className="p-4 border-2 border-dashed border-purple-300 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-all group"
+              className={`p-4 border-2 border-dashed ${isDarkMode ? 'border-purple-800 hover:border-purple-600 hover:bg-purple-900/20' : 'border-purple-300 hover:border-purple-500 hover:bg-purple-50'} rounded-lg transition-all group`}
             >
               <Plus className="w-8 h-8 text-purple-500 mx-auto mb-2 group-hover:scale-110 transition-transform" />
-              <p className="text-sm font-medium text-gray-700">Generate New Worksheet</p>
+              <p className={`text-sm font-medium ${darkMode.text}`}>Generate New Worksheet</p>
             </button>
 
             <Link
               to="/worksheets"
-              className="p-4 border-2 border-dashed border-blue-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all group block text-center"
+              className={`p-4 border-2 border-dashed ${isDarkMode ? 'border-blue-800 hover:border-blue-600 hover:bg-blue-900/20' : 'border-blue-300 hover:border-blue-500 hover:bg-blue-50'} rounded-lg transition-all group block text-center`}
             >
               <FileText className="w-8 h-8 text-blue-500 mx-auto mb-2 group-hover:scale-110 transition-transform" />
-              <p className="text-sm font-medium text-gray-700">View All Worksheets</p>
+              <p className={`text-sm font-medium ${darkMode.text}`}>View All Worksheets</p>
             </Link>
 
             <Link
               to="/analytics"
-              className="p-4 border-2 border-dashed border-green-300 rounded-lg hover:border-green-500 hover:bg-green-50 transition-all group block text-center"
+              className={`p-4 border-2 border-dashed ${isDarkMode ? 'border-green-800 hover:border-green-600 hover:bg-green-900/20' : 'border-green-300 hover:border-green-500 hover:bg-green-50'} rounded-lg transition-all group block text-center`}
             >
               <BarChart className="w-8 h-8 text-green-500 mx-auto mb-2 group-hover:scale-110 transition-transform" />
-              <p className="text-sm font-medium text-gray-700">View Analytics</p>
+              <p className={`text-sm font-medium ${darkMode.text}`}>View Analytics</p>
             </Link>
           </div>
         </div>
 
         {/* Recent Worksheets */}
-        <div className="bg-white rounded-xl p-6 shadow-sm">
+        <div className={`${darkMode.card} rounded-xl p-6 shadow-sm`}>
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-gray-800">Recent Worksheets</h2>
+            <h2 className={`text-lg font-semibold ${darkMode.text}`}>Recent Worksheets</h2>
             <Link
               to="/worksheets"
-              className="text-sm text-purple-600 hover:text-purple-700 font-medium"
+              className={`text-sm ${isDarkMode ? 'text-purple-400 hover:text-purple-300' : 'text-purple-600 hover:text-purple-700'} font-medium`}
             >
               View All →
             </Link>
@@ -179,30 +183,30 @@ function Dashboard() {
                 <Link
                   key={worksheet._id}
                   to={`/worksheet/${worksheet._id}`}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                  className={`flex items-center justify-between p-3 ${isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-50 hover:bg-gray-100'} rounded-lg transition-colors`}
                 >
                   <div className="flex items-center space-x-3">
                     <div className={`w-2 h-2 rounded-full ${
                       worksheet.status === 'completed' ? 'bg-green-500' : 'bg-yellow-500'
                     }`} />
                     <div>
-                      <p className="font-medium text-gray-800">{worksheet.title}</p>
-                      <p className="text-sm text-gray-500">
+                      <p className={`font-medium ${darkMode.text}`}>{worksheet.title}</p>
+                      <p className={`text-sm ${darkMode.textSecondary}`}>
                         Grade {worksheet.grade} • {worksheet.problemCount || worksheet.problems?.length || 0} problems
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
                     {worksheet.score !== null && (
-                      <span className="text-sm font-medium text-gray-700">{worksheet.score}%</span>
+                      <span className={`text-sm font-medium ${darkMode.text}`}>{worksheet.score}%</span>
                     )}
-                    <Clock className="w-4 h-4 text-gray-400" />
+                    <Clock className={`w-4 h-4 ${darkMode.textMuted}`} />
                   </div>
                 </Link>
               ))}
             </div>
           ) : (
-            <p className="text-gray-500 text-center py-8">
+            <p className={`${darkMode.textSecondary} text-center py-8`}>
               No worksheets yet. Create your first one!
             </p>
           )}

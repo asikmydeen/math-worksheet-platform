@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import AuthContext from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Worksheets from './pages/Worksheets';
@@ -96,6 +97,21 @@ function App() {
     delete api.defaults.headers.common['Authorization'];
   };
 
+  const updateUser = async (updates) => {
+    try {
+      const response = await api.put('/auth/profile', updates);
+      if (response.data.success) {
+        setUser(response.data.user);
+        return { success: true };
+      }
+    } catch (error) {
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'Failed to update profile' 
+      };
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -108,20 +124,22 @@ function App() {
   }
 
   return (
-    <AuthContext.Provider value={{ user, token, login, register, logout, loginWithToken }}>
-      <Router>
-        <Routes>
-          <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
-          <Route path="/auth/google/success" element={<GoogleCallback />} />
-          <Route path="/dashboard" element={user ? <Dashboard /> : <Navigate to="/login" />} />
-          <Route path="/worksheets" element={user ? <Worksheets /> : <Navigate to="/login" />} />
-          <Route path="/worksheet/:id" element={user ? <WorksheetSolver /> : <Navigate to="/login" />} />
-          <Route path="/worksheet/:id/view" element={user ? <WorksheetView /> : <Navigate to="/login" />} />
-          <Route path="/analytics" element={user ? <Analytics /> : <Navigate to="/login" />} />
-          <Route path="/" element={<Navigate to={user ? "/dashboard" : "/login"} />} />
-        </Routes>
-      </Router>
-    </AuthContext.Provider>
+    <ThemeProvider>
+      <AuthContext.Provider value={{ user, token, login, register, logout, loginWithToken, updateUser }}>
+        <Router>
+          <Routes>
+            <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
+            <Route path="/auth/google/success" element={<GoogleCallback />} />
+            <Route path="/dashboard" element={user ? <Dashboard /> : <Navigate to="/login" />} />
+            <Route path="/worksheets" element={user ? <Worksheets /> : <Navigate to="/login" />} />
+            <Route path="/worksheet/:id" element={user ? <WorksheetSolver /> : <Navigate to="/login" />} />
+            <Route path="/worksheet/:id/view" element={user ? <WorksheetView /> : <Navigate to="/login" />} />
+            <Route path="/analytics" element={user ? <Analytics /> : <Navigate to="/login" />} />
+            <Route path="/" element={<Navigate to={user ? "/dashboard" : "/login"} />} />
+          </Routes>
+        </Router>
+      </AuthContext.Provider>
+    </ThemeProvider>
   );
 }
 
