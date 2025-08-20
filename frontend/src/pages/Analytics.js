@@ -246,7 +246,7 @@ function Analytics() {
             <select
               value={selectedGrade}
               onChange={(e) => setSelectedGrade(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
+              className={`px-4 py-2 border rounded-lg focus:outline-none focus:border-purple-500 ${darkMode.input}`}
             >
               <option value="all">All Grades</option>
               <option value="K">Kindergarten</option>
@@ -257,7 +257,7 @@ function Analytics() {
             <select
               value={timeRange}
               onChange={(e) => setTimeRange(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
+              className={`px-4 py-2 border rounded-lg focus:outline-none focus:border-purple-500 ${darkMode.input}`}
             >
               <option value="week">This Week</option>
               <option value="month">This Month</option>
@@ -346,8 +346,8 @@ function Analytics() {
         {/* Charts Row 1 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Performance Trend */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Performance Trend</h3>
+          <div className={`${darkMode.card} rounded-xl shadow-sm p-6`}>
+            <h3 className={`text-lg font-semibold ${darkMode.text} mb-4`}>Performance Trend</h3>
             <ResponsiveContainer width="100%" height={300}>
               <AreaChart data={analytics.performanceByDay}>
                 <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
@@ -367,8 +367,8 @@ function Analytics() {
           </div>
 
           {/* Topic Performance */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Topic Performance</h3>
+          <div className={`${darkMode.card} rounded-xl shadow-sm p-6`}>
+            <h3 className={`text-lg font-semibold ${darkMode.text} mb-4`}>Topic Performance</h3>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={analytics.topicPerformance} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
@@ -394,8 +394,8 @@ function Analytics() {
         {/* Charts Row 2 */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Difficulty Distribution */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Difficulty Distribution</h3>
+          <div className={`${darkMode.card} rounded-xl shadow-sm p-6`}>
+            <h3 className={`text-lg font-semibold ${darkMode.text} mb-4`}>Difficulty Distribution</h3>
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
                 <Pie
@@ -418,8 +418,8 @@ function Analytics() {
           </div>
 
           {/* Skills Radar */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Skills Analysis</h3>
+          <div className={`${darkMode.card} rounded-xl shadow-sm p-6`}>
+            <h3 className={`text-lg font-semibold ${darkMode.text} mb-4`}>Skills Analysis</h3>
             <ResponsiveContainer width="100%" height={250}>
               <RadarChart data={analytics.skillsRadar}>
                 <PolarGrid stroke={chartTheme.grid} />
@@ -438,18 +438,18 @@ function Analytics() {
           </div>
 
           {/* Recent Activity */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Activity</h3>
+          <div className={`${darkMode.card} rounded-xl shadow-sm p-6`}>
+            <h3 className={`text-lg font-semibold ${darkMode.text} mb-4`}>Recent Activity</h3>
             <div className="space-y-3">
               {analytics.recentActivity.map((activity, index) => (
                 <div key={index} className={`flex items-center justify-between p-3 rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
                   <div className="flex items-center space-x-3">
-                    <Calendar className="w-5 h-5 text-gray-500" />
+                    <Calendar className={`w-5 h-5 ${darkMode.textMuted}`} />
                     <div>
                       <p className={`text-sm font-medium ${darkMode.text}`}>
                         {new Date(activity.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                       </p>
-                      <p className="text-xs text-gray-600">{activity.worksheets} worksheets</p>
+                      <p className={`text-xs ${darkMode.textSecondary}`}>{activity.worksheets} worksheets</p>
                     </div>
                   </div>
                   <div className="text-right">
@@ -460,7 +460,7 @@ function Analytics() {
                     }`}>
                       {activity.avgScore}%
                     </p>
-                    <p className="text-xs text-gray-600">avg score</p>
+                    <p className={`text-xs ${darkMode.textSecondary}`}>avg score</p>
                   </div>
                 </div>
               ))}
@@ -469,8 +469,8 @@ function Analytics() {
         </div>
 
         {/* Achievements */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Achievements</h3>
+        <div className={`${darkMode.card} rounded-xl shadow-sm p-6`}>
+          <h3 className={`text-lg font-semibold ${darkMode.text} mb-4`}>Achievements</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {analytics.achievements.map((achievement) => {
               const Icon = achievement.icon;

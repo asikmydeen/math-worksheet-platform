@@ -27,5 +27,8 @@ export const useDarkModeClasses = () => {
     buttonSecondary: isDarkMode 
       ? 'bg-gray-700 hover:bg-gray-600 text-gray-100 border-gray-600' 
       : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300',
+    input: isDarkMode
+      ? 'bg-gray-700 text-gray-100 border-gray-600'
+      : 'bg-white text-gray-900 border-gray-300',
   };
 };
