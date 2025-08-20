@@ -19,11 +19,13 @@ exports.generateWorksheet = async (req, res) => {
     // Get user and active kid profile
     const user = await User.findById(req.user.id).populate('activeKidProfile');
     
-    if (user.subscription.plan !== 'premium' && 
-        user.subscription.aiRequestsUsed >= user.subscription.aiRequestsLimit) {
+    // Check if user can generate worksheets
+    if (!user.canGenerateWorksheets()) {
       return res.status(403).json({
         success: false,
-        message: 'AI request limit reached. Please upgrade your plan or wait for the monthly reset.'
+        message: 'Please purchase a subscription to generate worksheets.',
+        requiresSubscription: true,
+        subscription: user.subscription
       });
     }
 

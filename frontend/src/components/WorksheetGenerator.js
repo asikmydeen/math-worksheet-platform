@@ -63,7 +63,12 @@ function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
         onClose();
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to generate worksheet');
+      if (err.response?.data?.requiresSubscription) {
+        // Redirect to pricing page
+        window.location.href = '/#pricing';
+      } else {
+        setError(err.response?.data?.message || 'Failed to generate worksheet');
+      }
     } finally {
       setLoading(false);
     }

@@ -205,9 +205,33 @@ userSchema.methods.checkAIRequestsReset = async function() {
   }
 };
 
-// Check if user has access
+// Check if user has access (anyone can login)
 userSchema.methods.hasAccess = function() {
-  return this.isActive && ['basic', 'premium', 'admin'].includes(this.accessLevel);
+  return this.isActive;
+};
+
+// Check if user has paid subscription
+userSchema.methods.hasPaidSubscription = function() {
+  return this.subscription.plan !== 'free' && 
+         this.subscription.subscriptionStatus === 'active' &&
+         (this.subscription.plan === 'lifetime' || this.subscription.aiRequestsLimit > 0);
+};
+
+// Check if user can generate worksheets
+userSchema.methods.canGenerateWorksheets = function() {
+  // Admins always have access
+  if (this.accessLevel === 'admin') return true;
+  
+  // Check paid subscription
+  if (this.hasPaidSubscription()) return true;
+  
+  // Check if they have remaining free requests
+  if (this.subscription.plan === 'free' && 
+      this.subscription.aiRequestsUsed < this.subscription.aiRequestsLimit) {
+    return true;
+  }
+  
+  return false;
 };
 
 const User = mongoose.model('User', userSchema);

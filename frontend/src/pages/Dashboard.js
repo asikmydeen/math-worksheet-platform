@@ -14,8 +14,11 @@ import {
   Award, 
   Brain,
   BarChart,
-  Clock
+  Clock,
+  Crown,
+  AlertCircle
 } from 'lucide-react';
+import paymentService from '../services/payment';
 
 function Dashboard() {
   const { user } = useAuth();
@@ -84,6 +87,63 @@ function Dashboard() {
           </p>
         </div>
 
+        {/* Subscription Status */}
+        {user?.subscription?.plan === 'free' && (
+          <div className={`${darkMode.card} rounded-xl p-6 shadow-sm border-2 border-orange-300 dark:border-orange-600`}>
+            <div className="flex items-start space-x-4">
+              <AlertCircle className="w-8 h-8 text-orange-500 flex-shrink-0" />
+              <div className="flex-1">
+                <h3 className={`text-lg font-semibold ${darkMode.text} mb-2`}>
+                  Upgrade to Premium
+                </h3>
+                <p className={`${darkMode.textSecondary} mb-4`}>
+                  You're currently on the free plan. Upgrade to generate AI-powered worksheets for your kids!
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    onClick={() => paymentService.createCheckoutSession('monthly')}
+                    className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+                  >
+                    Monthly $9.99
+                  </button>
+                  <button
+                    onClick={() => paymentService.createCheckoutSession('annual')}
+                    className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:shadow-lg transition-all"
+                  >
+                    Annual $99.99 (Save 17%)
+                  </button>
+                  <button
+                    onClick={() => paymentService.createCheckoutSession('lifetime')}
+                    className="px-4 py-2 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg hover:shadow-lg transition-all"
+                  >
+                    Lifetime $299.99
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Premium Status */}
+        {user?.subscription?.plan !== 'free' && (
+          <div className={`${darkMode.card} rounded-xl p-6 shadow-sm border-2 border-green-300 dark:border-green-600`}>
+            <div className="flex items-start space-x-4">
+              <Crown className="w-8 h-8 text-green-500 flex-shrink-0" />
+              <div className="flex-1">
+                <h3 className={`text-lg font-semibold ${darkMode.text} mb-2`}>
+                  {user?.subscription?.plan === 'lifetime' ? 'Lifetime' : user?.subscription?.plan?.charAt(0).toUpperCase() + user?.subscription?.plan?.slice(1)} Subscription Active
+                </h3>
+                <p className={`${darkMode.textSecondary}`}>
+                  {user?.subscription?.plan === 'lifetime' 
+                    ? 'You have unlimited access to all features!'
+                    : `You have ${(user?.subscription?.aiRequestsLimit || 0) - (user?.subscription?.aiRequestsUsed || 0)} worksheet generations remaining this period.`
+                  }
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className={`${darkMode.card} rounded-xl p-6 shadow-sm`}>
@@ -127,7 +187,10 @@ function Dashboard() {
               <div>
                 <p className={`text-sm ${darkMode.textSecondary}`}>AI Requests</p>
                 <p className={`text-2xl font-bold ${darkMode.text}`}>
-                  {stats?.subscription?.aiRequestsUsed || 0}/{stats?.subscription?.aiRequestsLimit || 50}
+                  {user?.subscription?.plan === 'lifetime' 
+                    ? '∞' 
+                    : `${user?.subscription?.aiRequestsUsed || 0}/${user?.subscription?.aiRequestsLimit || 0}`
+                  }
                 </p>
               </div>
               <Brain className="w-8 h-8 text-blue-500" />

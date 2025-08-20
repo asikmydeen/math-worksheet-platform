@@ -19,33 +19,29 @@ exports.googleCallback = async (accessToken, refreshToken, profile, done) => {
     
     const email = profile.emails[0].value.toLowerCase();
     
-    // Check if email is allowed
-    console.log('Checking if email is allowed:', email);
-    const allowedEmail = await AllowedEmail.isEmailAllowed(email);
-    console.log('Allowed email result:', allowedEmail);
-    
-    if (!allowedEmail) {
-      console.log('Email not found in allowlist:', email);
-      return done(null, false, { 
-        message: 'Access denied. Your email is not authorized to use this platform.' 
-      });
-    }
+    // No email allowlist check - anyone can sign up
+    console.log('Processing Google login for:', email);
 
     // Check if user already exists
     let user = await User.findOne({ googleId: profile.id });
     
     if (!user) {
-      // Create new user
+      // Create new user with free access
       user = new User({
         googleId: profile.id,
         email: email,
         name: profile.displayName,
         avatar: profile.photos[0]?.value,
-        accessLevel: allowedEmail.accessLevel || 'basic',
+        accessLevel: 'basic',
         role: 'parent',
         grade: '5', // Default grade
         hasSetupKidProfiles: false,
-        activeKidProfile: null
+        activeKidProfile: null,
+        subscription: {
+          plan: 'free',
+          aiRequestsLimit: 0, // No free worksheets until they purchase
+          aiRequestsUsed: 0
+        }
       });
       await user.save();
     } else {
