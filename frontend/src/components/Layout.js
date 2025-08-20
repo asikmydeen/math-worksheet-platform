@@ -1,11 +1,11 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { 
-  Calculator, 
-  Home, 
-  FileText, 
-  BarChart, 
+import {
+  Calculator,
+  Home,
+  FileText,
+  BarChart,
   LogOut,
   User
 } from 'lucide-react';
@@ -37,14 +37,14 @@ function Layout({ children }) {
                 <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
                   <Calculator className="w-6 h-6 text-white" />
                 </div>
-                <h1 className="ml-3 text-xl font-bold text-gray-800">AI Worksheet Generator</h1>
+                <h1 className="ml-3 text-xl font-bold text-gray-800">Worksheet Generator</h1>
               </Link>
-              
+
               <nav className="ml-10 flex space-x-4">
                 {navigation.map(item => {
                   const Icon = item.icon;
                   const isActive = location.pathname === item.href;
-                  
+
                   return (
                     <Link
                       key={item.name}
@@ -71,7 +71,7 @@ function Layout({ children }) {
                   <span className="text-gray-500">• Grade {user.grade}</span>
                 )}
               </div>
-              
+
               <button
                 onClick={handleLogout}
                 className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
