@@ -237,8 +237,8 @@ function Analytics() {
               onClick={() => setShowDemo(!showDemo)}
               className={`px-4 py-2 rounded-lg font-medium transition-all ${
                 showDemo 
-                  ? 'bg-purple-100 text-purple-700 border-2 border-purple-500' 
-                  : 'bg-gray-100 text-gray-700 border-2 border-gray-300'
+                  ? isDarkMode ? 'bg-purple-900 text-purple-300 border-2 border-purple-500' : 'bg-purple-100 text-purple-700 border-2 border-purple-500' 
+                  : isDarkMode ? 'bg-gray-800 text-gray-300 border-2 border-gray-600' : 'bg-gray-100 text-gray-700 border-2 border-gray-300'
               }`}
             >
               {showDemo ? 'Demo Mode' : 'Live Data'}
@@ -246,7 +246,7 @@ function Analytics() {
             <select
               value={selectedGrade}
               onChange={(e) => setSelectedGrade(e.target.value)}
-              className={`px-4 py-2 border rounded-lg focus:outline-none focus:border-purple-500 ${darkMode.input}`}
+              className={`px-4 py-2 border rounded-lg focus:outline-none focus:border-purple-500 ${isDarkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-300'}`}
             >
               <option value="all">All Grades</option>
               <option value="K">Kindergarten</option>
@@ -257,7 +257,7 @@ function Analytics() {
             <select
               value={timeRange}
               onChange={(e) => setTimeRange(e.target.value)}
-              className={`px-4 py-2 border rounded-lg focus:outline-none focus:border-purple-500 ${darkMode.input}`}
+              className={`px-4 py-2 border rounded-lg focus:outline-none focus:border-purple-500 ${isDarkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-300'}`}
             >
               <option value="week">This Week</option>
               <option value="month">This Month</option>
@@ -268,8 +268,8 @@ function Analytics() {
         </div>
 
         {showDemo && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <p className="text-sm text-yellow-800">
+          <div className={`rounded-lg p-4 ${isDarkMode ? 'bg-yellow-900/20 border border-yellow-700' : 'bg-yellow-50 border border-yellow-200'}`}>
+            <p className={`text-sm ${isDarkMode ? 'text-yellow-300' : 'text-yellow-800'}`}>
               <strong>Demo Mode:</strong> You're viewing sample analytics data. Click "Live Data" to see your actual performance.
             </p>
           </div>
@@ -479,8 +479,8 @@ function Analytics() {
                   key={achievement.id}
                   className={`p-4 rounded-lg border-2 transition-all ${
                     achievement.unlocked
-                      ? 'border-purple-500 bg-purple-50'
-                      : 'border-gray-200 bg-gray-50 opacity-60'
+                      ? isDarkMode ? 'border-purple-500 bg-purple-900/20' : 'border-purple-500 bg-purple-50'
+                      : isDarkMode ? 'border-gray-700 bg-gray-800 opacity-60' : 'border-gray-200 bg-gray-50 opacity-60'
                   }`}
                 >
                   <div className="flex items-center justify-between mb-2">

@@ -100,9 +100,9 @@ function Worksheets() {
 
   const getStatusBadge = (status) => {
     const styles = {
-      'completed': 'bg-green-100 text-green-800',
-      'in-progress': 'bg-yellow-100 text-yellow-800',
-      'draft': 'bg-gray-100 text-gray-800'
+      'completed': isDarkMode ? 'bg-green-900 text-green-300' : 'bg-green-100 text-green-800',
+      'in-progress': isDarkMode ? 'bg-yellow-900 text-yellow-300' : 'bg-yellow-100 text-yellow-800',
+      'draft': isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800'
     };
     
     return (
@@ -219,7 +219,7 @@ function Worksheets() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search worksheets..."
-                  className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:border-purple-500 ${darkMode.input}`}
+                  className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:border-purple-500 ${isDarkMode ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-400' : 'bg-white border-gray-300'}`}
                 />
               </div>
             </div>
@@ -227,7 +227,7 @@ function Worksheets() {
             <select
               value={filterGrade}
               onChange={(e) => setFilterGrade(e.target.value)}
-              className={`px-4 py-2 border rounded-lg focus:outline-none focus:border-purple-500 ${darkMode.input}`}
+              className={`px-4 py-2 border rounded-lg focus:outline-none focus:border-purple-500 ${isDarkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-300'}`}
             >
               <option value="all">All Grades</option>
               <option value="K">Kindergarten</option>
@@ -239,7 +239,7 @@ function Worksheets() {
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className={`px-4 py-2 border rounded-lg focus:outline-none focus:border-purple-500 ${darkMode.input}`}
+              className={`px-4 py-2 border rounded-lg focus:outline-none focus:border-purple-500 ${isDarkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-300'}`}
             >
               <option value="all">All Status</option>
               <option value="completed">Completed</option>
@@ -250,7 +250,7 @@ function Worksheets() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className={`px-4 py-2 border rounded-lg focus:outline-none focus:border-purple-500 ${darkMode.input}`}
+              className={`px-4 py-2 border rounded-lg focus:outline-none focus:border-purple-500 ${isDarkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-300'}`}
             >
               <option value="createdAt">Newest First</option>
               <option value="score">Highest Score</option>
@@ -325,7 +325,7 @@ function Worksheets() {
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full font-medium">
+                        <span className={`px-2 py-1 text-xs rounded-full font-medium ${isDarkMode ? 'bg-blue-900 text-blue-300' : 'bg-blue-100 text-blue-700'}`}>
                           {worksheet.subject || 'Math'}
                         </span>
                       </td>
@@ -335,12 +335,12 @@ function Worksheets() {
                       <td className="px-6 py-4">
                         <div className="flex flex-wrap gap-1">
                           {worksheet.topics?.slice(0, 3).map((topic, idx) => (
-                            <span key={idx} className="px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded">
+                            <span key={idx} className={`px-2 py-1 text-xs rounded ${isDarkMode ? 'bg-purple-900 text-purple-300' : 'bg-purple-100 text-purple-700'}`}>
                               {topic}
                             </span>
                           ))}
                           {worksheet.topics?.length > 3 && (
-                            <span className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded">
+                            <span className={`px-2 py-1 text-xs rounded ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
                               +{worksheet.topics.length - 3}
                             </span>
                           )}
@@ -420,7 +420,7 @@ function Worksheets() {
             <button
               onClick={() => setPage(Math.max(1, page - 1))}
               disabled={page === 1}
-              className={`px-4 py-2 border rounded-lg disabled:opacity-50 ${darkMode.buttonSecondary}`}
+              className={`px-4 py-2 border rounded-lg disabled:opacity-50 ${isDarkMode ? 'bg-gray-800 border-gray-700 text-white hover:bg-gray-700' : 'bg-white border-gray-300 hover:bg-gray-50'}`}
             >
               Previous
             </button>
@@ -432,7 +432,7 @@ function Worksheets() {
                 className={`px-4 py-2 rounded-lg ${
                   page === i + 1
                     ? 'bg-purple-500 text-white'
-                    : `border ${darkMode.buttonSecondary}`
+                    : `border ${isDarkMode ? 'bg-gray-800 border-gray-700 text-white hover:bg-gray-700' : 'bg-white border-gray-300 hover:bg-gray-50'}`
                 }`}
               >
                 {i + 1}
@@ -442,7 +442,7 @@ function Worksheets() {
             <button
               onClick={() => setPage(Math.min(totalPages, page + 1))}
               disabled={page === totalPages}
-              className={`px-4 py-2 border rounded-lg disabled:opacity-50 ${darkMode.buttonSecondary}`}
+              className={`px-4 py-2 border rounded-lg disabled:opacity-50 ${isDarkMode ? 'bg-gray-800 border-gray-700 text-white hover:bg-gray-700' : 'bg-white border-gray-300 hover:bg-gray-50'}`}
             >
               Next
             </button>
