@@ -50,7 +50,7 @@ function AccessDenied() {
                 Ready to Get Started?
               </h3>
               <p className={`text-sm ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'} mb-4`}>
-                PersonalPod Worksheets helps parents and teachers create personalized learning experiences for kids.
+                BrainyBees Worksheets helps parents and teachers create personalized learning experiences for kids.
               </p>
               <div className="space-y-2">
                 <p className={`text-sm font-medium ${isDarkMode ? 'text-yellow-300' : 'text-yellow-700'}`}>
@@ -77,10 +77,10 @@ function AccessDenied() {
           <p className={`text-xs ${darkMode.textMuted}`}>
             Contact support at{' '}
             <a 
-              href="mailto:support@personalpod.net" 
+              href="mailto:support@brainybees.org" 
               className="text-purple-500 hover:text-purple-600 font-medium"
             >
-              support@personalpod.net
+              support@brainybees.org
             </a>
           </p>
         </div>
@@ -113,7 +113,7 @@ function AccessDenied() {
         {/* Footer */}
         <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
           <p className={`text-xs ${darkMode.textMuted}`}>
-            PersonalPod Worksheets © 2024
+            BrainyBees Worksheets © 2024
           </p>
         </div>
       </div>

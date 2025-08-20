@@ -59,4 +59,4 @@ echo "🧹 Cleaning up old Docker images..."
 docker image prune -f
 
 echo "✅ Deployment completed successfully!"
-echo "🌐 Application available at: https://worksheets.personalpod.net"
+echo "🌐 Application available at: https://worksheets.brainybees.org"

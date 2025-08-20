@@ -9,7 +9,7 @@ passport.use(
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       callbackURL: process.env.NODE_ENV === 'production' 
-        ? 'https://worksheets.personalpod.net/api/auth/google/callback'
+        ? 'https://worksheets.brainybees.org/api/auth/google/callback'
         : '/api/auth/google/callback'
     },
     googleCallback

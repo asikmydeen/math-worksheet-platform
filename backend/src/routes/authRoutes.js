@@ -61,7 +61,7 @@ router.get('/google/callback',
   passport.authenticate('google', { 
     session: false,
     failureRedirect: process.env.NODE_ENV === 'production' 
-      ? 'https://worksheets.personalpod.net/access-denied'
+      ? 'https://worksheets.brainybees.org/access-denied'
       : (process.env.FRONTEND_URL + '/access-denied')
   }),
   (req, res) => {
@@ -71,14 +71,14 @@ router.get('/google/callback',
       
       // Determine frontend URL based on environment
       const frontendUrl = process.env.NODE_ENV === 'production' 
-        ? 'https://worksheets.personalpod.net'
+        ? 'https://worksheets.brainybees.org'
         : (process.env.FRONTEND_URL || 'http://localhost:3000');
       
       res.redirect(`${frontendUrl}/auth/google/success?token=${token}`);
     } catch (error) {
       console.error('Google callback error:', error);
       const frontendUrl = process.env.NODE_ENV === 'production' 
-        ? 'https://worksheets.personalpod.net'
+        ? 'https://worksheets.brainybees.org'
         : (process.env.FRONTEND_URL || 'http://localhost:3000');
       res.redirect(`${frontendUrl}/access-denied`);
     }
