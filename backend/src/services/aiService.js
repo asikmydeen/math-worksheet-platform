@@ -53,6 +53,43 @@ class AIService {
   /**
    * Generate problems based on subject, grade and parameters
    */
+  static parseAIResponse(content) {
+    // Remove any leading/trailing whitespace
+    content = content.trim();
+    
+    // Check if content is wrapped in markdown code blocks
+    if (content.startsWith('```')) {
+      // Remove markdown code blocks
+      content = content.replace(/^```(?:json)?\s*\n?/, '');
+      content = content.replace(/\n?```\s*$/, '');
+      content = content.trim();
+    }
+    
+    try {
+      const parsed = JSON.parse(content);
+      
+      // Handle different response formats
+      if (Array.isArray(parsed)) {
+        return parsed;
+      } else if (parsed.problems && Array.isArray(parsed.problems)) {
+        return parsed.problems;
+      } else if (parsed["0"]) {
+        // Handle object with numeric keys
+        return Object.values(parsed);
+      } else if (parsed.question) {
+        // Single problem object
+        return [parsed];
+      } else {
+        console.error('Unexpected response format:', parsed);
+        return [];
+      }
+    } catch (parseError) {
+      console.error('Failed to parse JSON:', parseError.message);
+      console.error('Content preview:', content.substring(0, 200));
+      throw new Error('Invalid JSON response from AI');
+    }
+  }
+
   static async generateProblems({ subject, grade, count = 10, topics, difficulty, customRequest }) {
     try {
       const client = await this.getClient();
@@ -185,15 +222,12 @@ Return ONLY a valid JSON array with this structure:
       });
 
       const content = response.choices[0].message.content;
-      let problems;
-
-      try {
-        const parsed = JSON.parse(content);
-        // Handle both {problems: [...]} and direct array responses
-        problems = Array.isArray(parsed) ? parsed : parsed.problems || [];
-      } catch (parseError) {
-        console.error('Failed to parse AI response:', parseError);
-        throw new Error('Invalid response format from AI');
+      console.log('AI Response length:', content.length);
+      
+      let problems = this.parseAIResponse(content);
+      
+      if (response.usage) {
+        console.log(`Token usage - Prompt: ${response.usage.prompt_tokens}, Completion: ${response.usage.completion_tokens}, Total: ${response.usage.total_tokens}`);
       }
 
       // Validate problems
@@ -204,20 +238,25 @@ Return ONLY a valid JSON array with this structure:
       // Ensure all problems have required fields
       problems = problems.map((problem, index) => ({
         question: problem.question || `Problem ${index + 1}`,
-        options: problem.options || ['Option A', 'Option B', 'Option C', 'Option D'],
-        correctAnswer: problem.correctAnswer || problem.options[0],
+        options: problem.options || problem.choices || ['Option A', 'Option B', 'Option C', 'Option D'],
+        choices: problem.choices || problem.options || ['Option A', 'Option B', 'Option C', 'Option D'],
+        correctAnswer: problem.correctAnswer || problem.answer || 'Option A',
+        answer: problem.answer || problem.correctAnswer || 'Option A',
         explanation: problem.explanation || 'No explanation provided',
         type: problem.type || 'multiple-choice',
         topic: problem.topic || subject,
         difficulty: problem.difficulty || difficulty || 'medium'
       }));
 
-      // Log token usage if available
-      if (response.usage) {
-        console.log(`Token usage - Prompt: ${response.usage.prompt_tokens}, Completion: ${response.usage.completion_tokens}, Total: ${response.usage.total_tokens}`);
-      }
-
-      return problems;
+      const title = `${subject} Worksheet - Grade ${grade}`;
+      return { 
+        problems, 
+        title, 
+        metadata: { 
+          model: model,
+          tokensUsed: response.usage?.total_tokens || 0
+        } 
+      };
 
     } catch (error) {
       console.error('Error generating problems:', error);
