@@ -13,9 +13,10 @@ class AIService {
     
     if (!settings) {
       // Use default settings if none exist
+      const defaultApiKey = process.env.OPENROUTER_API_KEY || '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';
       const defaultSettings = new LLMSettings({
         provider: 'openrouter',
-        apiKey: process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY,
+        apiKey: defaultApiKey,
         baseUrl: 'https://openrouter.ai/api/v1',
         selectedModel: 'openai/gpt-4o-mini',
         isActive: true
@@ -291,9 +292,13 @@ Format as a friendly, constructive analysis.`;
    */
   static async getAvailableModels() {
     try {
+      // Get the API key from settings or use default
+      const settings = await LLMSettings.getActiveSettings();
+      const apiKey = settings ? settings.getDecryptedApiKey() : (process.env.OPENROUTER_API_KEY || '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');
+      
       const response = await fetch('https://openrouter.ai/api/v1/models', {
         headers: {
-          'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY || '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'}`
+          'Authorization': `Bearer ${apiKey}`
         }
       });
 
@@ -303,30 +308,48 @@ Format as a friendly, constructive analysis.`;
 
       const data = await response.json();
       
-      // Filter and format models for educational use
+      // Include more models and better categorization
       const educationalModels = data.data
         .filter(model => {
-          // Include models good for educational content
+          // Include a wider range of models
           return model.id.includes('gpt') || 
                  model.id.includes('claude') || 
                  model.id.includes('llama') ||
                  model.id.includes('mistral') ||
-                 model.id.includes('deepseek');
+                 model.id.includes('deepseek') ||
+                 model.id.includes('gemini') ||
+                 model.id.includes('mixtral') ||
+                 model.id.includes('qwen') ||
+                 model.id.includes('command') ||
+                 model.id.includes('dolphin');
         })
         .map(model => ({
           id: model.id,
           name: model.name || model.id,
           pricing: model.pricing,
           contextLength: model.context_length,
-          description: model.description || `${model.id} - Context: ${model.context_length}`
+          description: model.description || `${model.id} - Context: ${model.context_length?.toLocaleString() || 'N/A'} tokens`
         }))
         .sort((a, b) => {
           // Sort by provider and capability
-          if (a.id.includes('gpt-4') && !b.id.includes('gpt-4')) return -1;
-          if (!a.id.includes('gpt-4') && b.id.includes('gpt-4')) return 1;
-          if (a.id.includes('claude') && !b.id.includes('claude')) return -1;
-          if (!a.id.includes('claude') && b.id.includes('claude')) return 1;
-          return a.name.localeCompare(b.name);
+          const providerOrder = ['openai', 'anthropic', 'google', 'meta-llama', 'mistral', 'deepseek'];
+          
+          const getProvider = (id) => {
+            for (const provider of providerOrder) {
+              if (id.includes(provider)) return provider;
+            }
+            return 'other';
+          };
+          
+          const aProvider = getProvider(a.id);
+          const bProvider = getProvider(b.id);
+          
+          if (aProvider !== bProvider) {
+            return providerOrder.indexOf(aProvider) - providerOrder.indexOf(bProvider);
+          }
+          
+          // Within same provider, sort by capability (4 > 3.5 > 3, etc)
+          return b.name.localeCompare(a.name);
         });
 
       return educationalModels;

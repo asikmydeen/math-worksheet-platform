@@ -198,24 +198,63 @@ function LLMSettings() {
             onChange={(e) => setSettings({ ...settings, selectedModel: e.target.value })}
             className={`w-full px-4 py-2 rounded-lg ${darkMode.input}`}
           >
-            <optgroup label="GPT Models">
-              {models.filter(m => m.id.includes('gpt')).map(model => (
+            <optgroup label="OpenAI Models">
+              {models.filter(m => m.id.includes('openai')).map(model => (
                 <option key={model.id} value={model.id}>
-                  {model.name} - ${model.pricing?.prompt || 0}/1k tokens
+                  {model.name} - ${(model.pricing?.prompt * 1000) || 0}/1k tokens
                 </option>
               ))}
             </optgroup>
-            <optgroup label="Claude Models">
-              {models.filter(m => m.id.includes('claude')).map(model => (
+            <optgroup label="Anthropic Claude">
+              {models.filter(m => m.id.includes('anthropic') || m.id.includes('claude')).map(model => (
                 <option key={model.id} value={model.id}>
-                  {model.name} - ${model.pricing?.prompt || 0}/1k tokens
+                  {model.name} - ${(model.pricing?.prompt * 1000) || 0}/1k tokens
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="Google Models">
+              {models.filter(m => m.id.includes('google') || m.id.includes('gemini')).map(model => (
+                <option key={model.id} value={model.id}>
+                  {model.name} - ${(model.pricing?.prompt * 1000) || 0}/1k tokens
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="Meta Llama">
+              {models.filter(m => m.id.includes('meta-llama') || (m.id.includes('llama') && !m.id.includes('ollama'))).map(model => (
+                <option key={model.id} value={model.id}>
+                  {model.name} - ${(model.pricing?.prompt * 1000) || 0}/1k tokens
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="Mistral AI">
+              {models.filter(m => m.id.includes('mistral') || m.id.includes('mixtral')).map(model => (
+                <option key={model.id} value={model.id}>
+                  {model.name} - ${(model.pricing?.prompt * 1000) || 0}/1k tokens
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="DeepSeek">
+              {models.filter(m => m.id.includes('deepseek')).map(model => (
+                <option key={model.id} value={model.id}>
+                  {model.name} - ${(model.pricing?.prompt * 1000) || 0}/1k tokens
                 </option>
               ))}
             </optgroup>
             <optgroup label="Other Models">
-              {models.filter(m => !m.id.includes('gpt') && !m.id.includes('claude')).map(model => (
+              {models.filter(m => 
+                !m.id.includes('openai') && 
+                !m.id.includes('anthropic') && 
+                !m.id.includes('claude') && 
+                !m.id.includes('google') && 
+                !m.id.includes('gemini') && 
+                !m.id.includes('meta-llama') && 
+                !m.id.includes('llama') && 
+                !m.id.includes('mistral') && 
+                !m.id.includes('mixtral') && 
+                !m.id.includes('deepseek')
+              ).map(model => (
                 <option key={model.id} value={model.id}>
-                  {model.name} - ${model.pricing?.prompt || 0}/1k tokens
+                  {model.name} - ${(model.pricing?.prompt * 1000) || 0}/1k tokens
                 </option>
               ))}
             </optgroup>
@@ -231,7 +270,7 @@ function LLMSettings() {
                 <span className={darkMode.textSecondary}>Cost:</span>
                 <span className="flex items-center">
                   <DollarSign className="h-3 w-3" />
-                  {selectedModelInfo.pricing?.prompt || 0}/1k prompt tokens
+                  {((selectedModelInfo.pricing?.prompt || 0) * 1000).toFixed(4)}/1k prompt tokens
                 </span>
               </div>
             </div>
