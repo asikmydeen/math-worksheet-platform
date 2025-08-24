@@ -57,6 +57,11 @@ class AIService {
     // Remove any leading/trailing whitespace
     content = content.trim();
     
+    // Debug log for different models
+    if (content.length < 1000) {
+      console.log('AI Response content:', content);
+    }
+    
     // Check if content is wrapped in markdown code blocks
     if (content.startsWith('```')) {
       // Remove markdown code blocks
