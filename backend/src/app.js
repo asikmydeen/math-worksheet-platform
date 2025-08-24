@@ -12,6 +12,7 @@ const worksheetRoutes = require('./routes/worksheetRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 const kidProfileRoutes = require('./routes/kidProfileRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
+const llmRoutes = require('./routes/llmRoutes');
 
 const app = express();
 
@@ -84,6 +85,7 @@ app.use('/api/worksheets', worksheetRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/kid-profiles', kidProfileRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/llm', llmRoutes);
 
 // 404 handler
 app.use((req, res) => {
