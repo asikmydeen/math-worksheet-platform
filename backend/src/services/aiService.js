@@ -1,11 +1,63 @@
-const { openai, aiConfig } = require('../config/openai');
+const OpenAI = require('openai');
+const LLMSettings = require('../models/LLMSettings');
 
 class AIService {
+  static openRouterClient = null;
+  static currentSettings = null;
+
+  /**
+   * Initialize or get OpenRouter client with current settings
+   */
+  static async getClient() {
+    const settings = await LLMSettings.getActiveSettings();
+    
+    if (!settings) {
+      // Use default settings if none exist
+      const defaultSettings = new LLMSettings({
+        provider: 'openrouter',
+        apiKey: process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY,
+        baseUrl: 'https://openrouter.ai/api/v1',
+        selectedModel: 'openai/gpt-4o-mini',
+        isActive: true
+      });
+      await defaultSettings.save();
+      this.currentSettings = defaultSettings;
+    } else {
+      this.currentSettings = settings;
+    }
+
+    // Recreate client if settings changed or client doesn't exist
+    if (!this.openRouterClient || this.settingsChanged(settings)) {
+      const apiKey = this.currentSettings.getDecryptedApiKey();
+      
+      this.openRouterClient = new OpenAI({
+        apiKey: apiKey,
+        baseURL: this.currentSettings.baseUrl || 'https://openrouter.ai/api/v1',
+        defaultHeaders: {
+          'HTTP-Referer': process.env.CLIENT_URL || 'https://brainybees.org',
+          'X-Title': 'BrainyBees Educational Platform'
+        }
+      });
+    }
+
+    return this.openRouterClient;
+  }
+
+  static settingsChanged(newSettings) {
+    if (!this.currentSettings) return true;
+    return this.currentSettings._id.toString() !== newSettings._id.toString() ||
+           this.currentSettings.updatedAt.getTime() !== newSettings.updatedAt.getTime();
+  }
+
   /**
    * Generate problems based on subject, grade and parameters
    */
   static async generateProblems({ subject, grade, count = 10, topics, difficulty, customRequest }) {
     try {
+      const client = await this.getClient();
+      const model = this.currentSettings.selectedModel || 'openai/gpt-4o-mini';
+      const config = this.currentSettings.modelConfig || {};
+
       const gradeDescriptions = {
         'K': 'Kindergarten (ages 5-6)',
         '1': '1st grade (ages 6-7)',
@@ -48,215 +100,128 @@ class AIService {
       
       if (customRequest) {
         // Natural language request
-        prompt = `You are an expert ${subject} teacher creating educational problems for grade ${grade} students.
-        
-User Request: "${customRequest}"
+        prompt = `You are an expert educational content creator. Based on this request, generate ${count} educational problems:
 
+Request: "${customRequest}"
 Subject: ${subject}
-Grade Level: ${gradeDescriptions[grade]}
-Subject Guidelines: ${subjectGuidelines[subject] || 'Create appropriate educational content'}
+Grade Level: ${grade} (${gradeDescriptions[grade] || grade})
+${topics ? `Topics: ${topics}` : ''}
+${difficulty ? `Difficulty: ${difficulty}` : ''}
 
-Generate exactly ${count} ${subject} problems based on the user's request. Ensure problems are age-appropriate, educationally valuable, and subject-specific.
+${subjectGuidelines[subject] || ''}
 
-Return the response in this exact JSON format:
-{
-  "title": "Brief worksheet title based on the request",
-  "description": "One sentence describing what students will practice",
-  "problems": [
-    {
-      "question": "The problem statement",
-      "answer": "correct answer (can be text, number, or array for multiple answers)",
-      "type": "fill-in-blank|multiple-choice|true-false|short-answer|essay|matching",
-      "topic": "specific topic within the subject",
-      "difficulty": "easy|medium|hard",
-      "hints": ["First hint", "Second hint"],
-      "explanation": "Step-by-step solution or explanation",
-      "choices": ["option1", "option2", "option3", "option4"] // only for multiple-choice
-    }
-  ]
-}
+IMPORTANT: 
+- Generate EXACTLY ${count} problems
+- Each problem should be appropriate for the grade level
+- Include variety in problem types
+- For Math problems, ensure calculations are grade-appropriate
+- Make problems engaging and educational
 
-AGE-APPROPRIATE FORMATTING RULES:
-- For Kindergarten-Grade 2 Math: Use simple format like "3 + 2 = ___" instead of "What is 3 + 2?"
-- KINDERGARTEN MUST BE 100% MULTIPLE-CHOICE - NO TYPING REQUIRED
-- For young grades (K-3): Prefer multiple-choice and true-false questions (easier for kids to click)
-- For K-2: Use simple, direct language with visual-friendly problems
-- For all grades: Mix question types, but favor clickable options over typing when possible
-- Multiple-choice should have 3 options for kindergarten, 4 options for grades 1+
-- True/false questions should be clear and unambiguous
-- For math problems requiring work, still use fill-in-blank type
-
-CRITICAL KINDERGARTEN RULES:
-- ALL questions MUST be multiple-choice (no fill-in-blank, no typing)
-- Use very simple numbers (1-10)
-- Include visual/counting problems like "How many apples? 🍎🍎🍎" with choices
-- Simple comparisons like "Which is bigger?" with 3 choices
-- Basic shapes and colors with multiple-choice
-
-Important:
-- Make problems engaging and subject-appropriate
-- 60% of questions should be multiple-choice or true-false for easier interaction
-- For subjects like English/History, use more text-based questions
-- For Science, include experimental or analytical questions
-- Ensure difficulty matches the grade level
-- Provide 2-3 helpful hints per problem
-- Give clear explanations for learning`;
-
+Return ONLY a valid JSON array with this exact structure:
+[
+  {
+    "question": "The problem statement",
+    "options": ["Option A", "Option B", "Option C", "Option D"],
+    "correctAnswer": "The correct option exactly as it appears in options",
+    "explanation": "Brief explanation of why this is correct",
+    "type": "multiple-choice",
+    "topic": "Specific topic",
+    "difficulty": "${difficulty || 'medium'}"
+  }
+]`;
       } else {
-        // Standard generation based on parameters
-        const topicsList = topics && topics.length > 0 
-          ? `Focus on these topics: ${topics.join(', ')}`
-          : `Use a variety of age-appropriate topics within ${subject}`;
+        // Standard generation
+        const topicList = topics ? topics.split(',').map(t => t.trim()).join(', ') : `various ${subject.toLowerCase()} topics`;
+        
+        prompt = `You are an expert ${subject} educator. Generate exactly ${count} ${difficulty || 'medium'} difficulty ${subject} problems for ${gradeDescriptions[grade] || grade} students.
 
-        prompt = `You are an expert ${subject} teacher creating problems for grade ${grade} students.
+Topics to cover: ${topicList}
 
-Subject: ${subject}
-Grade Level: ${gradeDescriptions[grade]}
-Subject Guidelines: ${subjectGuidelines[subject] || 'Create appropriate educational content'}
-Difficulty: ${difficulty || 'medium'}
-${topicsList}
+${subjectGuidelines[subject] || ''}
 
-Generate exactly ${count} ${subject} problems appropriate for this grade level.
+Requirements:
+1. Generate EXACTLY ${count} multiple-choice problems
+2. Each problem must be appropriate for ${grade} grade level
+3. Include 4 options (A, B, C, D) for each problem
+4. Ensure problems are educational and engaging
+5. For Math: Include word problems and pure calculations
+6. Vary the problem types and scenarios
 
-Return the response in this exact JSON format:
-{
-  "title": "Grade ${grade} ${subject} Practice",
-  "description": "Practice worksheet covering ${topics ? topics.join(', ') : 'various topics'}",
-  "problems": [
-    {
-      "question": "The problem statement",
-      "answer": "correct answer (can be text, number, or array)",
-      "type": "fill-in-blank|multiple-choice|true-false|short-answer|essay|matching",
-      "topic": "specific topic",
-      "difficulty": "easy|medium|hard",
-      "hints": ["First hint", "Second hint"],
-      "explanation": "Clear explanation",
-      "choices": ["option1", "option2", "option3", "option4"] // only for multiple-choice
-    }
-  ]
-}
-
-AGE-APPROPRIATE FORMATTING RULES:
-- For Kindergarten-Grade 2 Math: Use simple format like "3 + 2 = ___" instead of "What is 3 + 2?"
-- KINDERGARTEN MUST BE 100% MULTIPLE-CHOICE - NO TYPING REQUIRED
-- For Kindergarten: Use very simple problems with 3 choices like "2 + 1 = ?" choices: [1, 2, 3]
-- For young grades (K-3): Make 70% of questions multiple-choice or true-false (easier for kids)
-- For middle grades (4-8): Use 50% multiple-choice/true-false, 50% fill-in-blank
-- For high school (9-12): Mix all types based on subject needs
-- Multiple-choice: 3 options for kindergarten, 4 options for grades 1+
-- True/false: Use simple, clear statements
-
-QUESTION TYPE DISTRIBUTION BY GRADE:
-- Kindergarten: 100% multiple-choice (NO fill-in-blank, NO typing required)
-- Grades 1-2: 70% multiple-choice/true-false, 30% simple fill-in-blank
-- Grades 3-5: 60% multiple-choice/true-false, 40% fill-in-blank/short-answer
-- Grades 6+: Balanced mix of all types
-
-CRITICAL KINDERGARTEN RULES:
-- ALL questions MUST be multiple-choice
-- Use numbers 1-10 only
-- Include counting questions with visual representations
-- Simple comparisons (bigger/smaller, more/less)
-- Basic shapes and patterns
-
-Guidelines:
-- Mix problem types appropriate for ${subject}
-- Ensure appropriate difficulty progression
-- Make problems engaging and relevant to students
-- Content should be grade-appropriate
-- Include 2-3 hints that guide without giving away the answer
-- Explanations should teach the concept clearly
-- For multiple-choice, provide clear, distinct options
-- For true-false, make statements clear and unambiguous`;
+Return ONLY a valid JSON array with this structure:
+[
+  {
+    "question": "The problem statement",
+    "options": ["Option A", "Option B", "Option C", "Option D"],
+    "correctAnswer": "The correct option exactly as it appears in options",
+    "explanation": "Brief explanation of why this is correct",
+    "type": "multiple-choice",
+    "topic": "Specific topic covered",
+    "difficulty": "${difficulty || 'medium'}"
+  }
+]`;
       }
 
-      // Build the completion parameters
-      const completionParams = {
-        model: aiConfig.model,
+      console.log(`Generating ${count} ${subject} problems for grade ${grade} using model: ${model}`);
+
+      const response = await client.chat.completions.create({
+        model: model,
         messages: [
           {
             role: 'system',
-            content: `You are an expert educator who creates engaging, educational problems for students across all subjects. Always return valid JSON.`
+            content: 'You are an expert educational content creator. Always return valid JSON arrays of problems.'
           },
           {
             role: 'user',
             content: prompt
           }
         ],
-        temperature: aiConfig.temperature
-      };
+        temperature: config.temperature || 0.7,
+        max_tokens: config.maxTokens || 2000,
+        top_p: config.topP || 1,
+        response_format: { type: "json_object" }
+      });
 
-      // Only add response_format for models that support it
-      const supportsJsonMode = 
-        aiConfig.model.includes('gpt-4') ||
-        aiConfig.model.includes('gpt-3.5-turbo');
-      
-      if (supportsJsonMode) {
-        completionParams.response_format = { type: "json_object" };
+      const content = response.choices[0].message.content;
+      let problems;
+
+      try {
+        const parsed = JSON.parse(content);
+        // Handle both {problems: [...]} and direct array responses
+        problems = Array.isArray(parsed) ? parsed : parsed.problems || [];
+      } catch (parseError) {
+        console.error('Failed to parse AI response:', parseError);
+        throw new Error('Invalid response format from AI');
       }
 
-      // Determine which token parameter to use
-      const modelName = aiConfig.model.toLowerCase();
-      const useNewParam = 
-        modelName.includes('gpt-4') || 
-        modelName.includes('gpt-5') || 
-        modelName.includes('turbo-2024') ||
-        modelName.includes('2024') ||
-        modelName.includes('2025') ||
-        modelName.includes('o1') ||
-        modelName.includes('o2') ||
-        modelName.includes('gpt-4o');
-
-      if (useNewParam) {
-        completionParams.max_completion_tokens = aiConfig.max_tokens;
-      } else {
-        completionParams.max_tokens = aiConfig.max_tokens;
+      // Validate problems
+      if (!Array.isArray(problems) || problems.length === 0) {
+        throw new Error('No problems generated');
       }
 
-      console.log(`Generating ${subject} worksheet for grade ${grade} using model: ${aiConfig.model}`);
-      console.log('Completion params:', JSON.stringify({
-        model: completionParams.model,
-        temperature: completionParams.temperature,
-        hasResponseFormat: !!completionParams.response_format,
-        tokenParam: completionParams.max_completion_tokens ? 'max_completion_tokens' : 'max_tokens',
-        tokenValue: completionParams.max_completion_tokens || completionParams.max_tokens
-      }, null, 2));
+      // Ensure all problems have required fields
+      problems = problems.map((problem, index) => ({
+        question: problem.question || `Problem ${index + 1}`,
+        options: problem.options || ['Option A', 'Option B', 'Option C', 'Option D'],
+        correctAnswer: problem.correctAnswer || problem.options[0],
+        explanation: problem.explanation || 'No explanation provided',
+        type: problem.type || 'multiple-choice',
+        topic: problem.topic || subject,
+        difficulty: problem.difficulty || difficulty || 'medium'
+      }));
 
-      const completion = await openai.chat.completions.create(completionParams);
-
-      // Log the raw response for debugging
-      const rawContent = completion.choices[0].message.content;
-      console.log('AI Raw Response:', rawContent);
-      console.log('AI Response Length:', rawContent ? rawContent.length : 0);
-
-      if (!rawContent) {
-        throw new Error('Empty response from AI model');
+      // Log token usage if available
+      if (response.usage) {
+        console.log(`Token usage - Prompt: ${response.usage.prompt_tokens}, Completion: ${response.usage.completion_tokens}, Total: ${response.usage.total_tokens}`);
       }
 
-      const response = JSON.parse(rawContent);
-      
-      // Validate response structure
-      if (!response.problems || !Array.isArray(response.problems)) {
-        throw new Error('Invalid response structure from AI');
-      }
-
-      // Add metadata
-      response.metadata = {
-        model: aiConfig.model,
-        generatedAt: new Date().toISOString(),
-        requestType: customRequest ? 'natural-language' : 'standard',
-        subject
-      };
-
-      return response;
+      return problems;
 
     } catch (error) {
-      console.error('AI Service Error:', error);
+      console.error('Error generating problems:', error);
       
-      // Fallback to basic problem generation if AI fails
-      if (error.message && (error.message.includes('API key') || error.message.includes('rate limit') || error.message.includes('max_tokens'))) {
-        console.log('Falling back to basic problem generation...');
-        return this.generateFallbackProblems(subject, grade, count, topics, difficulty);
+      if (error.response) {
+        console.error('API Error Response:', error.response.data);
+        throw new Error(`AI Service Error: ${error.response.data.error?.message || 'Failed to generate problems'}`);
       }
       
       throw error;
@@ -264,102 +229,111 @@ Guidelines:
   }
 
   /**
-   * Fallback problem generation when AI is unavailable
+   * Analyze student performance and provide insights
    */
-  static generateFallbackProblems(subject, grade, count, topics, difficulty) {
-    const problems = [];
-    const gradeNum = grade === 'K' ? 0 : parseInt(grade);
-    
-    for (let i = 0; i < count; i++) {
-      let problem = {};
-      
-      // Generate subject-appropriate problems
-      switch(subject) {
-        case 'Math':
-          if (gradeNum <= 2) {
-            const a = Math.floor(Math.random() * 20) + 1;
-            const b = Math.floor(Math.random() * 10) + 1;
-            problem = {
-              question: `What is ${a} + ${b}?`,
-              answer: a + b,
-              topic: 'Addition',
-              difficulty: 'easy'
-            };
-          } else {
-            const a = Math.floor(Math.random() * 12) + 1;
-            const b = Math.floor(Math.random() * 12) + 1;
-            problem = {
-              question: `What is ${a} × ${b}?`,
-              answer: a * b,
-              topic: 'Multiplication',
-              difficulty: 'medium'
-            };
+  static async analyzePerformance(worksheetData) {
+    try {
+      const client = await this.getClient();
+      const model = this.currentSettings.selectedModel || 'openai/gpt-4o-mini';
+      const config = this.currentSettings.modelConfig || {};
+
+      const prompt = `Analyze this student's worksheet performance and provide educational insights:
+
+Worksheet: ${worksheetData.title}
+Subject: ${worksheetData.subject}
+Grade: ${worksheetData.grade}
+Score: ${worksheetData.score}/${worksheetData.totalQuestions} (${worksheetData.percentage}%)
+Time Spent: ${worksheetData.timeSpent} seconds
+
+Problems Analysis:
+${worksheetData.problems.map((p, i) => `
+${i + 1}. Topic: ${p.topic}
+   Correct: ${p.isCorrect ? 'Yes' : 'No'}
+   Student Answer: ${p.studentAnswer}
+   Correct Answer: ${p.correctAnswer}
+`).join('')}
+
+Provide:
+1. Overall performance summary
+2. Strengths identified
+3. Areas needing improvement
+4. Specific recommendations for practice
+5. Encouraging feedback for the student
+
+Format as a friendly, constructive analysis.`;
+
+      const response = await client.chat.completions.create({
+        model: model,
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a supportive educational analyst providing constructive feedback to help students improve.'
+          },
+          {
+            role: 'user',
+            content: prompt
           }
-          break;
-          
-        case 'Science':
-          problem = {
-            question: `What state of matter is water at room temperature?`,
-            answer: 'liquid',
-            type: 'multiple-choice',
-            choices: ['solid', 'liquid', 'gas', 'plasma'],
-            topic: 'States of Matter',
-            difficulty: 'easy'
-          };
-          break;
-          
-        case 'English':
-          problem = {
-            question: `Which word is a noun? (cat, run, blue, quickly)`,
-            answer: 'cat',
-            type: 'multiple-choice',
-            choices: ['cat', 'run', 'blue', 'quickly'],
-            topic: 'Parts of Speech',
-            difficulty: 'easy'
-          };
-          break;
-          
-        case 'History':
-          problem = {
-            question: `Who was the first president of the United States?`,
-            answer: 'George Washington',
-            topic: 'American History',
-            difficulty: 'easy'
-          };
-          break;
-          
-        default:
-          problem = {
-            question: `Sample question for ${subject}`,
-            answer: 'Sample answer',
-            topic: 'General',
-            difficulty: 'medium'
-          };
-      }
-      
-      // Add common fields
-      problem.type = problem.type || 'fill-in-blank';
-      problem.hints = [
-        'Think about what you know',
-        'Review your notes',
-        'Take your time'
-      ];
-      problem.explanation = 'Review this concept in your textbook.';
-      
-      problems.push(problem);
+        ],
+        temperature: config.temperature || 0.7,
+        max_tokens: 500
+      });
+
+      return response.choices[0].message.content;
+
+    } catch (error) {
+      console.error('Error analyzing performance:', error);
+      throw error;
     }
-    
-    return {
-      title: `Grade ${grade} ${subject} Practice`,
-      description: `Practice worksheet for ${subject}`,
-      problems,
-      metadata: {
-        model: 'fallback',
-        generatedAt: new Date().toISOString(),
-        requestType: 'fallback',
-        subject
+  }
+
+  /**
+   * Get list of available models from OpenRouter
+   */
+  static async getAvailableModels() {
+    try {
+      const response = await fetch('https://openrouter.ai/api/v1/models', {
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY || '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'}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch models');
       }
-    };
+
+      const data = await response.json();
+      
+      // Filter and format models for educational use
+      const educationalModels = data.data
+        .filter(model => {
+          // Include models good for educational content
+          return model.id.includes('gpt') || 
+                 model.id.includes('claude') || 
+                 model.id.includes('llama') ||
+                 model.id.includes('mistral') ||
+                 model.id.includes('deepseek');
+        })
+        .map(model => ({
+          id: model.id,
+          name: model.name || model.id,
+          pricing: model.pricing,
+          contextLength: model.context_length,
+          description: model.description || `${model.id} - Context: ${model.context_length}`
+        }))
+        .sort((a, b) => {
+          // Sort by provider and capability
+          if (a.id.includes('gpt-4') && !b.id.includes('gpt-4')) return -1;
+          if (!a.id.includes('gpt-4') && b.id.includes('gpt-4')) return 1;
+          if (a.id.includes('claude') && !b.id.includes('claude')) return -1;
+          if (!a.id.includes('claude') && b.id.includes('claude')) return 1;
+          return a.name.localeCompare(b.name);
+        });
+
+      return educationalModels;
+    } catch (error) {
+      console.error('Error fetching models:', error);
+      throw error;
+    }
   }
 }
 
