@@ -23,8 +23,10 @@ import {
   Activity,
   Eye,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Brain
 } from 'lucide-react';
+import LLMSettings from '../components/LLMSettings';
 
 const ComprehensiveAdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('users');
@@ -43,7 +45,8 @@ const ComprehensiveAdminDashboard = () => {
     { id: 'users', label: 'User Management', icon: Users },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
     { id: 'emails', label: 'Email Access', icon: Mail },
-    { id: 'settings', label: 'Platform Settings', icon: Settings }
+    { id: 'settings', label: 'Platform Settings', icon: Settings },
+    { id: 'llm', label: 'LLM Settings', icon: Brain }
   ];
 
   useEffect(() => {
@@ -619,6 +622,10 @@ const ComprehensiveAdminDashboard = () => {
             <div className="text-center py-12 text-gray-500 dark:text-gray-400">
               Platform settings feature coming soon...
             </div>
+          )}
+
+          {activeTab === 'llm' && (
+            <LLMSettings />
           )}
         </div>
       </div>
