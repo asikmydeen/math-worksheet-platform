@@ -176,11 +176,13 @@ exports.testConfiguration = async (req, res) => {
       difficulty: 'easy'
     });
 
-    if (testProblems && testProblems.length > 0) {
+    if (testProblems && testProblems.problems && testProblems.problems.length > 0) {
       res.json({
         success: true,
         message: 'LLM configuration test successful',
-        sample: testProblems[0]
+        sample: testProblems.problems[0],
+        model: testProblems.metadata?.model,
+        tokensUsed: testProblems.metadata?.tokensUsed
       });
     } else {
       throw new Error('No problems generated');
