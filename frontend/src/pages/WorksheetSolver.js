@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import api from '../services/api';
+import { useDarkModeClasses } from '../components/DarkModeWrapper';
 import { 
   CheckCircle, 
   XCircle, 
@@ -20,6 +21,7 @@ import {
 function WorksheetSolver() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const darkMode = useDarkModeClasses();
   const [worksheet, setWorksheet] = useState(null);
   const [answers, setAnswers] = useState({});
   const [showHints, setShowHints] = useState({});
@@ -204,10 +206,10 @@ function WorksheetSolver() {
 
         {/* Problem Display */}
         {!results ? (
-          <div className="bg-white rounded-xl shadow-sm p-8">
+          <div className={`${darkMode.card} rounded-xl shadow-sm p-8`}>
             <div className="mb-6">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold text-gray-700">
+                <h2 className={`text-lg font-semibold ${darkMode.text}`}>
                   Problem {currentProblem + 1} of {worksheet.problems.length}
                 </h2>
                 <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">
@@ -215,7 +217,9 @@ function WorksheetSolver() {
                 </span>
               </div>
               
-              <div className="text-2xl font-medium text-gray-800 mb-6 bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl border-2 border-purple-200 relative">
+              <div className={`text-2xl font-medium mb-6 p-6 rounded-xl border-2 relative ${darkMode.text} ${
+                darkMode.card
+              } ${darkMode.border}`}>
                 <Sparkles className="w-6 h-6 text-purple-500 absolute top-4 right-4 animate-pulse" />
                 {worksheet.problems[currentProblem].question}
               </div>
@@ -225,24 +229,24 @@ function WorksheetSolver() {
                 const problem = worksheet.problems[currentProblem];
                 const questionType = problem.type || 'fill-in-blank';
                 
-                if (questionType === 'multiple-choice' && problem.choices) {
+                if (questionType === 'multiple-choice' && (problem.choices || problem.options)) {
                   return (
                     <div className="space-y-3">
-                      {problem.choices.map((choice, idx) => (
+                      {(problem.choices || problem.options).map((choice, idx) => (
                         <button
                           key={idx}
                           onClick={() => handleAnswerChange(currentProblem, choice)}
                           className={`w-full p-4 text-left text-lg rounded-lg border-2 transition-all ${
                             answers[currentProblem] === choice
-                              ? 'border-purple-500 bg-purple-50 text-purple-700 font-medium'
-                              : 'border-gray-300 hover:border-purple-300 hover:bg-gray-50'
+                              ? 'border-purple-500 bg-purple-50 text-purple-700 font-medium dark:bg-purple-900 dark:text-purple-200'
+                              : `${darkMode.card} ${darkMode.border} hover:border-purple-300 ${darkMode.cardHover}`
                           }`}
                         >
-                          <span className="inline-block w-8 h-8 rounded-full mr-3 text-center font-bold ${
+                          <span className={`inline-block w-8 h-8 rounded-full mr-3 text-center font-bold ${
                             answers[currentProblem] === choice
                               ? 'bg-purple-500 text-white'
                               : 'bg-gray-200 text-gray-700'
-                          }">
+                          }`}>
                             {String.fromCharCode(65 + idx)}
                           </span>
                           {choice}
@@ -285,7 +289,7 @@ function WorksheetSolver() {
                       value={answers[currentProblem] || ''}
                       onChange={(e) => handleAnswerChange(currentProblem, e.target.value)}
                       placeholder="Type your answer here"
-                      className="w-full px-4 py-3 text-xl border-2 border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
+                      className={`w-full px-4 py-3 text-xl border-2 rounded-lg focus:outline-none focus:border-purple-500 ${darkMode.input}`}
                       autoFocus
                     />
                   );
