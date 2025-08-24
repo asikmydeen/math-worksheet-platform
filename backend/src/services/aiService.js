@@ -132,7 +132,9 @@ Return ONLY a valid JSON array with this exact structure:
 ]`;
       } else {
         // Standard generation
-        const topicList = topics ? topics.split(',').map(t => t.trim()).join(', ') : `various ${subject.toLowerCase()} topics`;
+        const topicList = topics 
+          ? (Array.isArray(topics) ? topics.join(', ') : topics.split(',').map(t => t.trim()).join(', '))
+          : `various ${subject.toLowerCase()} topics`;
         
         prompt = `You are an expert ${subject} educator. Generate exactly ${count} ${difficulty || 'medium'} difficulty ${subject} problems for ${gradeDescriptions[grade] || grade} students.
 
