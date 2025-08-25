@@ -184,7 +184,7 @@ function LandingPage() {
               <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
                 <Calculator className="w-6 h-6 text-white" />
               </div>
-              <span className={`ml-3 text-xl font-bold ${darkMode.text}`}>PersonalPod Worksheets</span>
+              <span className={`ml-3 text-xl font-bold ${darkMode.text}`}>BrainyBees</span>
             </div>
 
             {/* Desktop Navigation */}
@@ -296,7 +296,7 @@ function LandingPage() {
       <section id="features" className={`py-20 ${isDarkMode ? 'bg-gray-800/50' : 'bg-gray-50'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className={`text-4xl font-bold ${darkMode.text} mb-4`}>Why Choose PersonalPod Worksheets?</h2>
+            <h2 className={`text-4xl font-bold ${darkMode.text} mb-4`}>Why Choose BrainyBees?</h2>
             <p className={`text-xl ${darkMode.textSecondary} max-w-3xl mx-auto`}>
               Experience the future of educational content creation with our comprehensive platform
             </p>
@@ -410,7 +410,7 @@ function LandingPage() {
           <div className="text-center mb-16">
             <h2 className={`text-4xl font-bold ${darkMode.text} mb-4`}>Loved by Educators Worldwide</h2>
             <p className={`text-xl ${darkMode.textSecondary} max-w-3xl mx-auto`}>
-              See what teachers, parents, and students are saying about PersonalPod Worksheets
+              See what teachers, parents, and students are saying about BrainyBees
             </p>
           </div>
 
@@ -470,7 +470,7 @@ function LandingPage() {
                 <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
                   <Calculator className="w-5 h-5 text-white" />
                 </div>
-                <span className={`ml-2 text-lg font-bold ${darkMode.text}`}>PersonalPod Worksheets</span>
+                <span className={`ml-2 text-lg font-bold ${darkMode.text}`}>BrainyBees</span>
               </div>
               <p className={`${darkMode.textSecondary} mb-4 max-w-md`}>
                 Empowering educators with AI-powered worksheet generation. Create, track, and analyze educational content like never before.
@@ -503,7 +503,7 @@ function LandingPage() {
 
           <div className={`border-t ${darkMode.border} mt-8 pt-8 text-center`}>
             <p className={`${darkMode.textSecondary}`}>
-              © 2024 PersonalPod Worksheets. All rights reserved. Made with ❤️ for educators worldwide.
+              © 2024 BrainyBees. All rights reserved. Made with ❤️ for educators worldwide.
             </p>
           </div>
         </div>

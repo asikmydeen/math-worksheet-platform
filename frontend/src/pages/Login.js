@@ -70,7 +70,7 @@ function Login() {
               <Calculator className="w-8 h-8 text-white" />
             </div>
             <h2 className={`text-3xl font-bold ${darkMode.text} mb-2`}>
-              Welcome to PersonalPod
+              Welcome to BrainyBees
             </h2>
             <p className={`${darkMode.textSecondary} text-lg`}>
               Sign in to create amazing worksheets with AI
