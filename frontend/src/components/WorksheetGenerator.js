@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
-import { X, BookOpen, Sparkles, Loader, Info, Clock } from 'lucide-react';
+import { X, BookOpen, Sparkles, Loader, Info, Clock, AlertCircle } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
 import { useDarkModeClasses } from './DarkModeWrapper';
 import WorksheetPreview from './WorksheetPreview';
 
 function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
   const { isDarkMode } = useTheme();
+  const { user } = useAuth();
   const darkMode = useDarkModeClasses();
   const [mode, setMode] = useState('standard');
   const [loading, setLoading] = useState(false);
@@ -176,7 +178,12 @@ function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
   };
 
   const handleGenerateError = (err) => {
-    if (err.response?.data?.requiresSubscription) {
+    if (err.response?.status === 429) {
+      // Rate limiting error
+      const retryAfter = err.response.headers['retry-after'];
+      const waitTime = retryAfter ? parseInt(retryAfter) : 60;
+      setError(`Too many requests. Please wait ${waitTime} seconds before trying again.`);
+    } else if (err.response?.data?.requiresSubscription) {
       window.location.href = '/#pricing';
     } else {
       setError(err.response?.data?.message || 'Failed to generate worksheet');
@@ -249,8 +256,20 @@ function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
         </div>
 
         {error && (
-          <div className={`mb-4 p-3 ${isDarkMode ? 'bg-red-900/20 border-red-800 text-red-400' : 'bg-red-100 border-red-300 text-red-700'} rounded-lg`}>
-            {error}
+          <div className={`mb-4 p-3 ${isDarkMode ? 'bg-red-900/20 border-red-800 text-red-400' : 'bg-red-100 border-red-300 text-red-700'} rounded-lg flex items-start gap-2`}>
+            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {/* AI Requests Info */}
+        {user && (
+          <div className={`mb-4 p-3 ${isDarkMode ? 'bg-blue-900/20 border-blue-800 text-blue-400' : 'bg-blue-100 border-blue-300 text-blue-700'} rounded-lg flex items-center gap-2`}>
+            <Info className="w-5 h-5 shrink-0" />
+            <span className="text-sm">
+              AI Requests: {user.subscription?.aiRequestsUsed || 0} / {user.subscription?.aiRequestsLimit || 10} used this hour
+              {user.subscription?.plan === 'free' && ' (Upgrade for more)'}
+            </span>
           </div>
         )}
 
