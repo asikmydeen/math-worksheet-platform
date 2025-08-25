@@ -34,10 +34,10 @@
 - [x] Enable editing generated problems
 
 ### 6. Analytics & Insights
-- [ ] Add detailed performance analytics per topic
-- [ ] Implement learning curve visualization
-- [ ] Add comparative analytics (vs class average)
-- [ ] Generate personalized study recommendations
+- [x] Add detailed performance analytics per topic
+- [x] Implement learning curve visualization
+- [x] Add comparative analytics (vs class average)
+- [x] Generate personalized study recommendations
 
 ## 🟢 Feature Enhancements
 

@@ -1,5 +1,6 @@
 const Worksheet = require('../models/Worksheet');
 const User = require('../models/User');
+const AnalyticsService = require('../services/analyticsService');
 
 // Get user analytics
 exports.getUserAnalytics = async (req, res) => {
@@ -132,6 +133,99 @@ exports.getProgressOverTime = async (req, res) => {
 };
 
 // Get leaderboard
+// Get detailed topic analytics
+exports.getTopicAnalytics = async (req, res) => {
+  try {
+    const { timeRange = 'all', grade } = req.query;
+    const userId = req.user.id;
+    
+    const topicAnalytics = await AnalyticsService.getTopicAnalytics(
+      userId, 
+      { timeRange, grade }
+    );
+    
+    res.json({
+      success: true,
+      analytics: topicAnalytics
+    });
+  } catch (error) {
+    console.error('Get topic analytics error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching topic analytics'
+    });
+  }
+};
+
+// Get learning curve for a specific topic
+exports.getLearningCurve = async (req, res) => {
+  try {
+    const { topic } = req.params;
+    const { limit = 50 } = req.query;
+    const userId = req.user.id;
+    
+    const learningCurve = await AnalyticsService.getLearningCurve(
+      userId,
+      topic,
+      { limit: parseInt(limit) }
+    );
+    
+    res.json({
+      success: true,
+      learningCurve
+    });
+  } catch (error) {
+    console.error('Get learning curve error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching learning curve data'
+    });
+  }
+};
+
+// Get comparative analytics
+exports.getComparativeAnalytics = async (req, res) => {
+  try {
+    const { grade } = req.query;
+    const userId = req.user.id;
+    
+    const comparative = await AnalyticsService.getComparativeAnalytics(
+      userId,
+      { grade }
+    );
+    
+    res.json({
+      success: true,
+      comparative
+    });
+  } catch (error) {
+    console.error('Get comparative analytics error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching comparative analytics'
+    });
+  }
+};
+
+// Get personalized recommendations
+exports.getRecommendations = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const recommendations = await AnalyticsService.generateRecommendations(userId);
+    
+    res.json({
+      success: true,
+      recommendations
+    });
+  } catch (error) {
+    console.error('Get recommendations error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error generating recommendations'
+    });
+  }
+};
+
 exports.getLeaderboard = async (req, res) => {
   try {
     const { period = 'week' } = req.query;

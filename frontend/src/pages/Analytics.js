@@ -3,6 +3,9 @@ import Layout from '../components/Layout';
 import api from '../services/api';
 import { useTheme } from '../contexts/ThemeContext';
 import { useDarkModeClasses } from '../components/DarkModeWrapper';
+import TopicAnalytics from '../components/TopicAnalytics';
+import LearningCurveViz from '../components/LearningCurveViz';
+import ComparativeAnalytics from '../components/ComparativeAnalytics';
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   AreaChart, Area, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
@@ -23,6 +26,7 @@ function Analytics() {
   const [selectedGrade, setSelectedGrade] = useState('all');
   const [showDemo, setShowDemo] = useState(false);
   const [hasData, setHasData] = useState(true);
+  const [activeTab, setActiveTab] = useState('overview'); // overview, topics, learning-curve, comparative
 
   // Helper function to format time ago
   const getTimeAgo = (dateString) => {
@@ -275,7 +279,7 @@ function Analytics() {
           </div>
         )}
 
-        {analytics && (
+        {analytics && activeTab === 'overview' && (
           <>
             {/* Key Metrics */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
@@ -502,6 +506,49 @@ function Analytics() {
             })}
           </div>
         </div>
+        </>
+        )}
+
+        {/* Tab Navigation */}
+        <div className={`${darkMode.card} rounded-xl shadow-sm`}>
+          <div className="flex border-b ${darkMode.border}">
+            {[
+              { id: 'overview', label: 'Overview', icon: BarChart2 },
+              { id: 'topics', label: 'Topic Analysis', icon: BookOpen },
+              { id: 'learning-curve', label: 'Learning Curves', icon: TrendingUp },
+              { id: 'comparative', label: 'Comparative', icon: Target }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex-1 px-4 py-3 flex items-center justify-center gap-2 font-medium transition-all ${
+                  activeTab === tab.id
+                    ? `text-purple-600 border-b-2 border-purple-600 ${isDarkMode ? 'bg-gray-800' : 'bg-purple-50'}`
+                    : `${darkMode.text} hover:${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'}`
+                }`}
+              >
+                <tab.icon className="w-4 h-4" />
+                <span className="hidden sm:inline">{tab.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'topics' && (
+          <TopicAnalytics timeRange={timeRange} grade={selectedGrade !== 'all' ? selectedGrade : null} />
+        )}
+        
+        {activeTab === 'learning-curve' && (
+          <LearningCurveViz 
+            userId={null} 
+            selectedTopics={analytics.topicPerformance.slice(0, 3).map(t => t.topic)} 
+          />
+        )}
+        
+        {activeTab === 'comparative' && (
+          <ComparativeAnalytics grade={selectedGrade !== 'all' ? selectedGrade : null} />
+        )}
 
         {/* Insights */}
         <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl shadow-sm p-6 text-white">
