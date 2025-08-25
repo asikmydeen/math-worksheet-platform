@@ -1,13 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useDarkModeClasses } from './DarkModeWrapper';
-import { CheckCircle, XCircle, Circle, Square } from 'lucide-react';
+import { CheckCircle, XCircle } from 'lucide-react';
 
 function ProblemRenderer({ problem, index, onAnswer, showResult, isReview }) {
   const { isDarkMode } = useTheme();
   const darkMode = useDarkModeClasses();
   const [userAnswer, setUserAnswer] = useState(problem.userAnswer || '');
   const [matchingAnswers, setMatchingAnswers] = useState({});
+
+  // Reset state when problem changes
+  useEffect(() => {
+    setUserAnswer(problem.userAnswer || '');
+    setMatchingAnswers({});
+  }, [problem, index]);
 
   const handleAnswer = (answer) => {
     setUserAnswer(answer);
@@ -202,7 +208,15 @@ function ProblemRenderer({ problem, index, onAnswer, showResult, isReview }) {
     if (!problem.matchingPairs) return null;
     
     const leftItems = problem.matchingPairs.map(pair => pair.left);
-    const rightItems = problem.matchingPairs.map(pair => pair.right).sort(() => Math.random() - 0.5);
+    // Create a stable shuffled array using the problem index as seed
+    const rightItems = [...problem.matchingPairs.map(pair => pair.right)];
+    // Simple deterministic shuffle based on problem content
+    const seed = problem.question.length + index;
+    rightItems.sort((a, b) => {
+      const hashA = a.charCodeAt(0) + seed;
+      const hashB = b.charCodeAt(0) + seed;
+      return hashA - hashB;
+    });
     
     return (
       <div className="mt-4">

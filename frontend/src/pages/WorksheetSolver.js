@@ -250,6 +250,7 @@ function WorksheetSolver() {
               </div>
               
               <ProblemRenderer
+                key={`problem-${currentProblem}`}
                 problem={{
                   ...worksheet.problems[currentProblem],
                   userAnswer: answers[currentProblem]
