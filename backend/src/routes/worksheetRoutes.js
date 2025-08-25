@@ -7,7 +7,9 @@ const {
   getWorksheets,
   getWorksheet,
   submitWorksheet,
-  deleteWorksheet
+  deleteWorksheet,
+  getAdaptiveDifficulty,
+  getQueueStatus
 } = require('../controllers/worksheetController');
 const {
   generateWorksheetStream,
@@ -23,6 +25,8 @@ router.post('/generate-preview', generateWorksheetPreview);
 router.post('/create-from-preview', createWorksheetFromPreview);
 router.post('/generate-stream', generateWorksheetStream);
 router.get('/generation-stats', getGenerationProgress);
+router.get('/adaptive-difficulty', getAdaptiveDifficulty);
+router.get('/queue-status', getQueueStatus);
 router.get('/', getWorksheets);
 router.get('/:id', getWorksheet);
 router.post('/:id/submit', submitWorksheet);

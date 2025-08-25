@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import api from '../services/api';
 import { useDarkModeClasses } from '../components/DarkModeWrapper';
+import ProblemRenderer from '../components/ProblemRenderer';
 import { 
   CheckCircle, 
   XCircle, 
@@ -217,84 +218,16 @@ function WorksheetSolver() {
                 </span>
               </div>
               
-              <div className={`text-2xl font-medium mb-6 p-6 rounded-xl border-2 relative ${darkMode.text} ${
-                darkMode.card
-              } ${darkMode.border}`}>
-                <Sparkles className="w-6 h-6 text-purple-500 absolute top-4 right-4 animate-pulse" />
-                {worksheet.problems[currentProblem].question}
-              </div>
-              
-              {/* Render different input types based on question type */}
-              {(() => {
-                const problem = worksheet.problems[currentProblem];
-                const questionType = problem.type || 'fill-in-blank';
-                
-                if (questionType === 'multiple-choice' && (problem.choices || problem.options)) {
-                  return (
-                    <div className="space-y-3">
-                      {(problem.choices || problem.options).map((choice, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => handleAnswerChange(currentProblem, choice)}
-                          className={`w-full p-4 text-left text-lg rounded-lg border-2 transition-all ${
-                            answers[currentProblem] === choice
-                              ? 'border-purple-500 bg-purple-50 text-purple-700 font-medium dark:bg-purple-900 dark:text-purple-200'
-                              : `${darkMode.card} ${darkMode.border} hover:border-purple-300 ${darkMode.cardHover}`
-                          }`}
-                        >
-                          <span className={`inline-block w-8 h-8 rounded-full mr-3 text-center font-bold ${
-                            answers[currentProblem] === choice
-                              ? 'bg-purple-500 text-white'
-                              : 'bg-gray-200 text-gray-700'
-                          }`}>
-                            {String.fromCharCode(65 + idx)}
-                          </span>
-                          {choice}
-                        </button>
-                      ))}
-                    </div>
-                  );
-                } else if (questionType === 'true-false') {
-                  return (
-                    <div className="flex space-x-4">
-                      <button
-                        onClick={() => handleAnswerChange(currentProblem, 'true')}
-                        className={`flex-1 p-6 text-xl rounded-lg border-2 transition-all ${
-                          answers[currentProblem] === 'true'
-                            ? 'border-green-500 bg-green-50 text-green-700 font-bold'
-                            : 'border-gray-300 hover:border-green-300 hover:bg-green-50'
-                        }`}
-                      >
-                        <CheckCircle className="w-8 h-8 mx-auto mb-2" />
-                        True
-                      </button>
-                      <button
-                        onClick={() => handleAnswerChange(currentProblem, 'false')}
-                        className={`flex-1 p-6 text-xl rounded-lg border-2 transition-all ${
-                          answers[currentProblem] === 'false'
-                            ? 'border-red-500 bg-red-50 text-red-700 font-bold'
-                            : 'border-gray-300 hover:border-red-300 hover:bg-red-50'
-                        }`}
-                      >
-                        <XCircle className="w-8 h-8 mx-auto mb-2" />
-                        False
-                      </button>
-                    </div>
-                  );
-                } else {
-                  // Default text input for fill-in-blank, short-answer, etc.
-                  return (
-                    <input
-                      type="text"
-                      value={answers[currentProblem] || ''}
-                      onChange={(e) => handleAnswerChange(currentProblem, e.target.value)}
-                      placeholder="Type your answer here"
-                      className={`w-full px-4 py-3 text-xl border-2 rounded-lg focus:outline-none focus:border-purple-500 ${darkMode.input}`}
-                      autoFocus
-                    />
-                  );
-                }
-              })()}
+              <ProblemRenderer
+                problem={{
+                  ...worksheet.problems[currentProblem],
+                  userAnswer: answers[currentProblem]
+                }}
+                index={currentProblem}
+                onAnswer={(answer) => handleAnswerChange(currentProblem, answer)}
+                showResult={false}
+                isReview={false}
+              />
               
               {/* Hints */}
               <div className="mt-4">

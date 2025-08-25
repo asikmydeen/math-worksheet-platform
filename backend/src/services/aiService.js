@@ -1,5 +1,6 @@
 const OpenAI = require('openai');
 const LLMSettings = require('../models/LLMSettings');
+const aiQueueService = require('./aiQueueService');
 
 class AIService {
   static openRouterClient = null;
@@ -288,6 +289,37 @@ class AIService {
     }
   }
 
+  static generateProblemTypePrompt(problemTypes, count) {
+    const typeDistribution = {
+      'multiple-choice': Math.floor(count * 0.3),
+      'fill-in-blank': Math.floor(count * 0.25),
+      'true-false': Math.floor(count * 0.2),
+      'short-answer': Math.floor(count * 0.15),
+      'matching': Math.floor(count * 0.1)
+    };
+    
+    // Adjust for specific problem types if requested
+    if (problemTypes && problemTypes.length > 0) {
+      const requestedTypes = {};
+      const perType = Math.floor(count / problemTypes.length);
+      const remainder = count % problemTypes.length;
+      
+      problemTypes.forEach((type, index) => {
+        requestedTypes[type] = perType + (index < remainder ? 1 : 0);
+      });
+      
+      return requestedTypes;
+    }
+    
+    // Ensure we have exactly the right count
+    const total = Object.values(typeDistribution).reduce((a, b) => a + b, 0);
+    if (total < count) {
+      typeDistribution['fill-in-blank'] += count - total;
+    }
+    
+    return typeDistribution;
+  }
+
   static async generateProblemsWithRetry(params, maxRetries = 3) {
     let lastError;
     const delays = [1000, 2000, 4000]; // Exponential backoff delays
@@ -353,7 +385,7 @@ class AIService {
     throw new Error(`Failed after ${maxRetries} attempts: ${lastError.message}`);
   }
 
-  static async generateProblems({ subject, grade, count = 10, topics, difficulty, customRequest }) {
+  static async generateProblems({ subject, grade, count = 10, topics, difficulty, customRequest, problemTypes = null }) {
     try {
       const client = await this.getClient();
       const model = this.currentSettings.selectedModel || 'openai/gpt-4o-mini';
@@ -397,6 +429,9 @@ class AIService {
         'General': 'Mixed topics across various subjects'
       };
 
+      // Get problem type distribution
+      const typeDistribution = this.generateProblemTypePrompt(problemTypes, count);
+      
       let prompt;
       
       if (customRequest) {
@@ -412,24 +447,68 @@ ${difficulty ? `Difficulty: ${difficulty}` : ''}
 ${subjectGuidelines[subject] || ''}
 
 IMPORTANT: 
-- Generate EXACTLY ${count} problems
+- Generate EXACTLY ${count} problems with these types:
+${Object.entries(typeDistribution).map(([type, num]) => `  - ${num} ${type} problems`).join('\n')}
 - Each problem should be appropriate for the grade level
-- Include variety in problem types
 - For Math problems, ensure calculations are grade-appropriate
 - Make problems engaging and educational
 
-Return ONLY a valid JSON array with this exact structure:
-[
-  {
-    "question": "The problem statement",
-    "options": ["Option A", "Option B", "Option C", "Option D"],
-    "correctAnswer": "The correct option exactly as it appears in options",
-    "explanation": "Brief explanation of why this is correct",
-    "type": "multiple-choice",
-    "topic": "Specific topic",
-    "difficulty": "${difficulty || 'medium'}"
-  }
-]`;
+Return ONLY a valid JSON array with problems in this format:
+
+For multiple-choice:
+{
+  "question": "What is 2 + 2?",
+  "type": "multiple-choice",
+  "choices": ["2", "3", "4", "5"],
+  "answer": "4",
+  "explanation": "2 + 2 equals 4",
+  "topic": "Addition",
+  "difficulty": "${difficulty || 'medium'}"
+}
+
+For fill-in-blank:
+{
+  "question": "The capital of France is _____.",
+  "type": "fill-in-blank",
+  "answer": "Paris",
+  "explanation": "Paris is the capital city of France",
+  "topic": "Geography",
+  "difficulty": "${difficulty || 'medium'}"
+}
+
+For true-false:
+{
+  "question": "The Earth is flat.",
+  "type": "true-false",
+  "answer": "False",
+  "explanation": "The Earth is spherical, not flat",
+  "topic": "Science",
+  "difficulty": "${difficulty || 'medium'}"
+}
+
+For short-answer:
+{
+  "question": "Explain why water is important for life.",
+  "type": "short-answer",
+  "answer": "Water is essential for life because it helps transport nutrients, regulates body temperature, and is needed for cellular processes.",
+  "explanation": "This answer should mention key functions of water in living organisms",
+  "topic": "Biology",
+  "difficulty": "${difficulty || 'medium'}"
+}
+
+For matching:
+{
+  "question": "Match the countries with their capitals",
+  "type": "matching",
+  "matchingPairs": [
+    {"left": "France", "right": "Paris"},
+    {"left": "Japan", "right": "Tokyo"},
+    {"left": "Brazil", "right": "Brasília"}
+  ],
+  "explanation": "These are the correct capital cities for each country",
+  "topic": "Geography",
+  "difficulty": "${difficulty || 'medium'}"
+}`;
       } else {
         // Standard generation
         const topicList = topics 
@@ -443,25 +522,27 @@ Topics to cover: ${topicList}
 ${subjectGuidelines[subject] || ''}
 
 Requirements:
-1. Generate EXACTLY ${count} multiple-choice problems
+1. Generate EXACTLY ${count} problems with these types:
+${Object.entries(typeDistribution).map(([type, num]) => `   - ${num} ${type} problems`).join('\n')}
 2. Each problem must be appropriate for ${grade} grade level
-3. Include 4 options (A, B, C, D) for each problem
+3. Mix problem types for variety and engagement
 4. Ensure problems are educational and engaging
 5. For Math: Include word problems and pure calculations
 6. Vary the problem types and scenarios
 
-Return ONLY a valid JSON array with this structure:
-[
-  {
-    "question": "The problem statement",
-    "options": ["Option A", "Option B", "Option C", "Option D"],
-    "correctAnswer": "The correct option exactly as it appears in options",
-    "explanation": "Brief explanation of why this is correct",
-    "type": "multiple-choice",
-    "topic": "Specific topic covered",
-    "difficulty": "${difficulty || 'medium'}"
-  }
-]`;
+Return ONLY a valid JSON array. Use these formats for different problem types:
+
+Multiple-choice: {"question": "What is 5 × 3?", "type": "multiple-choice", "choices": ["10", "15", "20", "25"], "answer": "15", "explanation": "5 × 3 = 15", "topic": "Multiplication", "difficulty": "${difficulty || 'medium'}"}
+
+Fill-in-blank: {"question": "5 + ___ = 12", "type": "fill-in-blank", "answer": "7", "explanation": "12 - 5 = 7", "topic": "Addition", "difficulty": "${difficulty || 'medium'}"}
+
+True-false: {"question": "A triangle has 4 sides.", "type": "true-false", "answer": "False", "explanation": "A triangle has 3 sides", "topic": "Geometry", "difficulty": "${difficulty || 'medium'}"}
+
+Short-answer: {"question": "What is the water cycle?", "type": "short-answer", "answer": "The water cycle is the continuous movement of water through evaporation, condensation, and precipitation.", "explanation": "Key processes should be mentioned", "topic": "Science", "difficulty": "${difficulty || 'medium'}"}
+
+Matching: {"question": "Match the operations with their results", "type": "matching", "matchingPairs": [{"left": "2 + 3", "right": "5"}, {"left": "4 × 2", "right": "8"}, {"left": "10 - 4", "right": "6"}], "explanation": "These are the correct calculations", "topic": "Basic Operations", "difficulty": "${difficulty || 'medium'}"}
+
+IMPORTANT: For multiple-choice, use "choices" array and ensure "answer" matches exactly one of the choices.`;
       }
 
       console.log(`Generating ${count} ${subject} problems for grade ${grade} using model: ${model}`);
@@ -491,7 +572,10 @@ Return ONLY a valid JSON array with this structure:
         requestParams.response_format = { type: "json_object" };
       }
       
-      const response = await client.chat.completions.create(requestParams);
+      // Queue the request
+      const response = await aiQueueService.addToQueue({
+        execute: async () => client.chat.completions.create(requestParams)
+      });
 
       const content = response.choices[0].message.content;
       console.log('AI Response length:', content.length);
@@ -507,16 +591,59 @@ Return ONLY a valid JSON array with this structure:
         throw new Error('No problems generated');
       }
 
-      // Validate each problem
+      // Validate each problem based on type
       problems = problems.filter(problem => {
         if (!problem.question) {
           console.warn('Problem missing question:', problem);
           return false;
         }
-        if (!problem.options && !problem.choices) {
-          console.warn('Problem missing options/choices:', problem);
-          return false;
+        
+        // Type-specific validation
+        const type = problem.type || 'multiple-choice';
+        
+        switch (type) {
+          case 'multiple-choice':
+            if (!problem.options && !problem.choices) {
+              console.warn('Multiple-choice problem missing options/choices:', problem);
+              return false;
+            }
+            if (!problem.answer && !problem.correctAnswer) {
+              console.warn('Multiple-choice problem missing answer:', problem);
+              return false;
+            }
+            break;
+            
+          case 'fill-in-blank':
+          case 'short-answer':
+            if (!problem.answer) {
+              console.warn(`${type} problem missing answer:`, problem);
+              return false;
+            }
+            break;
+            
+          case 'true-false':
+            if (!problem.answer || !['True', 'False', 'true', 'false'].includes(problem.answer)) {
+              console.warn('True-false problem missing or invalid answer:', problem);
+              return false;
+            }
+            break;
+            
+          case 'matching':
+            if (!problem.matchingPairs || !Array.isArray(problem.matchingPairs)) {
+              console.warn('Matching problem missing matchingPairs:', problem);
+              return false;
+            }
+            if (problem.matchingPairs.length < 2) {
+              console.warn('Matching problem needs at least 2 pairs:', problem);
+              return false;
+            }
+            break;
+            
+          default:
+            console.warn('Unknown problem type:', type);
+            return false;
         }
+        
         return true;
       });
 
@@ -526,36 +653,61 @@ Return ONLY a valid JSON array with this structure:
 
       // Ensure all problems have required fields and score quality
       problems = problems.map((problem, index) => {
-        const options = problem.options || problem.choices || ['Option A', 'Option B', 'Option C', 'Option D'];
-        let correctAnswer = problem.correctAnswer || problem.answer || options[0];
+        const type = problem.type || 'multiple-choice';
+        let finalProblem = {
+          question: problem.question,
+          type: type,
+          topic: problem.topic || topics?.[0] || subject,
+          difficulty: problem.difficulty || difficulty || 'medium',
+          explanation: problem.explanation || ''
+        };
         
-        // Ensure correctAnswer is in options
-        if (!options.includes(correctAnswer)) {
-          console.warn(`Correct answer "${correctAnswer}" not in options for problem ${index + 1}, using first option`);
-          correctAnswer = options[0];
+        // Handle type-specific fields
+        switch (type) {
+          case 'multiple-choice':
+            const options = problem.options || problem.choices || ['Option A', 'Option B', 'Option C', 'Option D'];
+            let correctAnswer = problem.correctAnswer || problem.answer || options[0];
+            
+            // Ensure correctAnswer is in options
+            if (!options.includes(correctAnswer)) {
+              console.warn(`Correct answer "${correctAnswer}" not in options for problem ${index + 1}, using first option`);
+              correctAnswer = options[0];
+            }
+            
+            finalProblem.choices = options;
+            finalProblem.answer = correctAnswer;
+            break;
+            
+          case 'fill-in-blank':
+          case 'short-answer':
+            finalProblem.answer = problem.answer || problem.correctAnswer || '';
+            break;
+            
+          case 'true-false':
+            // Normalize answer to Title Case
+            const tfAnswer = (problem.answer || problem.correctAnswer || 'True').toString();
+            finalProblem.answer = tfAnswer.charAt(0).toUpperCase() + tfAnswer.slice(1).toLowerCase();
+            break;
+            
+          case 'matching':
+            finalProblem.matchingPairs = problem.matchingPairs || [];
+            // For matching, the answer is the pairs themselves
+            finalProblem.answer = finalProblem.matchingPairs;
+            break;
         }
         
         // Calculate quality score
         const qualityScore = this.calculateProblemQuality({
           question: problem.question,
-          options: options,
+          answer: finalProblem.answer,
+          type: type,
           explanation: problem.explanation,
           grade: grade,
           subject: subject
         });
         
-        return {
-          question: problem.question || `Problem ${index + 1}`,
-          options: options,
-          choices: options,
-          correctAnswer: correctAnswer,
-          answer: correctAnswer,
-          explanation: problem.explanation || 'No explanation provided',
-          type: problem.type || 'multiple-choice',
-          topic: problem.topic || topicList,
-          difficulty: problem.difficulty || difficulty || 'medium',
-          qualityScore: qualityScore
-        };
+        finalProblem.qualityScore = qualityScore;
+        return finalProblem;
       });
       
       // Remove duplicates
@@ -629,20 +781,23 @@ Provide:
 
 Format as a friendly, constructive analysis.`;
 
-      const response = await client.chat.completions.create({
-        model: model,
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a supportive educational analyst providing constructive feedback to help students improve.'
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        temperature: config.temperature || 0.7,
-        max_tokens: 500
+      // Queue the request
+      const response = await aiQueueService.addToQueue({
+        execute: async () => client.chat.completions.create({
+          model: model,
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a supportive educational analyst providing constructive feedback to help students improve.'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          temperature: config.temperature || 0.7,
+          max_tokens: 500
+        })
       });
 
       return response.choices[0].message.content;

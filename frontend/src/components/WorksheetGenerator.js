@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import api from '../services/api';
-import { X, BookOpen, Sparkles, Loader } from 'lucide-react';
+import { X, BookOpen, Sparkles, Loader, Info } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useDarkModeClasses } from './DarkModeWrapper';
 import WorksheetPreview from './WorksheetPreview';
@@ -14,6 +14,8 @@ function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
   const [draftSaved, setDraftSaved] = useState(false);
   const [previewData, setPreviewData] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [adaptiveInfo, setAdaptiveInfo] = useState(null);
+  const [loadingAdaptive, setLoadingAdaptive] = useState(false);
   
   // Load draft from localStorage
   const loadDraft = () => {
@@ -41,7 +43,8 @@ function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
       topics: [],
       difficulty: 'medium',
       title: '',
-      naturalLanguageRequest: ''
+      naturalLanguageRequest: '',
+      problemTypes: []
     };
   });
   
@@ -86,6 +89,42 @@ function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
   const getTopicsForSubject = () => {
     return subjectTopics[formData.subject] || subjectTopics['General'];
   };
+
+  // Fetch adaptive difficulty info
+  const fetchAdaptiveInfo = async () => {
+    if (formData.difficulty !== 'adaptive') {
+      setAdaptiveInfo(null);
+      return;
+    }
+
+    setLoadingAdaptive(true);
+    try {
+      const params = new URLSearchParams({
+        subject: formData.subject,
+        grade: formData.grade,
+        topics: formData.topics.join(',')
+      });
+      
+      const response = await api.get(`/worksheets/adaptive-difficulty?${params}`);
+      if (response.data.success) {
+        setAdaptiveInfo(response.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch adaptive info:', err);
+    } finally {
+      setLoadingAdaptive(false);
+    }
+  };
+
+  // Fetch adaptive info when relevant fields change
+  useEffect(() => {
+    if (formData.difficulty === 'adaptive') {
+      const timer = setTimeout(() => {
+        fetchAdaptiveInfo();
+      }, 500); // Debounce
+      return () => clearTimeout(timer);
+    }
+  }, [formData.difficulty, formData.subject, formData.grade, formData.topics]);
 
   const handleGenerate = async () => {
     setError('');
@@ -283,6 +322,7 @@ function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
                   onChange={(e) => setFormData({...formData, difficulty: e.target.value})}
                   className={`w-full px-3 py-2 border ${darkMode.inputBorder} ${darkMode.inputBg} ${darkMode.inputText} rounded-lg focus:outline-none focus:border-purple-500`}
                 >
+                  <option value="adaptive">Adaptive (Recommended)</option>
                   <option value="easy">Easy</option>
                   <option value="medium">Medium</option>
                   <option value="hard">Hard</option>
@@ -290,6 +330,35 @@ function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
                 </select>
               </div>
             </div>
+
+            {formData.difficulty === 'adaptive' && adaptiveInfo && (
+              <div className={`col-span-2 p-3 rounded-lg ${isDarkMode ? 'bg-purple-900/20 border-purple-700' : 'bg-purple-50 border-purple-300'} border`}>
+                <div className="flex items-start gap-2">
+                  <Info className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className={`text-sm font-medium ${darkMode.text} mb-1`}>
+                      Adaptive Difficulty: {adaptiveInfo.difficulty.charAt(0).toUpperCase() + adaptiveInfo.difficulty.slice(1)}
+                    </p>
+                    <p className={`text-xs ${darkMode.textSecondary}`}>
+                      {adaptiveInfo.reason}
+                    </p>
+                    {adaptiveInfo.metrics && (
+                      <p className={`text-xs ${darkMode.textSecondary} mt-1`}>
+                        Based on {adaptiveInfo.metrics.recentWorksheetsAnalyzed} recent worksheets 
+                        (avg score: {adaptiveInfo.metrics.weightedAverageScore}%)
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {formData.difficulty === 'adaptive' && loadingAdaptive && (
+              <div className={`col-span-2 p-3 rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'} flex items-center justify-center`}>
+                <Loader className="w-4 h-4 animate-spin mr-2" />
+                <span className={`text-sm ${darkMode.textSecondary}`}>Analyzing performance...</span>
+              </div>
+            )}
 
             <div>
               <label className={`block text-sm font-medium ${darkMode.text} mb-1`}>Topics (Optional)</label>
@@ -312,6 +381,38 @@ function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
                   </label>
                 ))}
               </div>
+            </div>
+
+            <div>
+              <label className={`block text-sm font-medium ${darkMode.text} mb-1`}>Problem Types (Optional)</label>
+              <div className={`grid grid-cols-2 md:grid-cols-3 gap-2 p-2 border ${darkMode.border} ${darkMode.inputBg} rounded-lg`}>
+                {[
+                  { id: 'multiple-choice', label: 'Multiple Choice' },
+                  { id: 'fill-in-blank', label: 'Fill in the Blank' },
+                  { id: 'true-false', label: 'True/False' },
+                  { id: 'short-answer', label: 'Short Answer' },
+                  { id: 'matching', label: 'Matching' }
+                ].map(type => (
+                  <label key={type.id} className={`flex items-center space-x-2 cursor-pointer ${darkMode.cardHover} p-1 rounded`}>
+                    <input
+                      type="checkbox"
+                      checked={formData.problemTypes.includes(type.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setFormData({...formData, problemTypes: [...formData.problemTypes, type.id]});
+                        } else {
+                          setFormData({...formData, problemTypes: formData.problemTypes.filter(t => t !== type.id)});
+                        }
+                      }}
+                      className="rounded text-purple-500 focus:ring-purple-500"
+                    />
+                    <span className={`text-sm ${darkMode.text}`}>{type.label}</span>
+                  </label>
+                ))}
+              </div>
+              <p className={`text-xs ${darkMode.textMuted} mt-1`}>
+                Leave empty for automatic mix of problem types
+              </p>
             </div>
 
             <div>

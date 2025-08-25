@@ -3,6 +3,7 @@ const User = require('../models/User');
 const KidProfile = require('../models/KidProfile');
 const AIService = require('../services/aiService');
 const CacheService = require('../services/cacheService');
+const AdaptiveDifficultyService = require('../services/adaptiveDifficultyService');
 
 // Generate new worksheet
 exports.generateWorksheet = async (req, res) => {
@@ -14,7 +15,8 @@ exports.generateWorksheet = async (req, res) => {
       topics, 
       difficulty = 'medium',
       naturalLanguageRequest,
-      title
+      title,
+      problemTypes
     } = req.body;
 
     // Get user and active kid profile
@@ -33,6 +35,21 @@ exports.generateWorksheet = async (req, res) => {
     // Use active kid profile's grade if not specified and profile exists
     const worksheetGrade = grade || (user.activeKidProfile ? user.activeKidProfile.grade : user.grade || '5');
 
+    // Calculate adaptive difficulty if not specified or if set to 'adaptive'
+    let effectiveDifficulty = difficulty;
+    let adaptiveInfo = null;
+    
+    if (!difficulty || difficulty === 'adaptive') {
+      adaptiveInfo = await AdaptiveDifficultyService.calculateAdaptiveDifficulty(
+        req.user.id,
+        subject,
+        worksheetGrade,
+        topics
+      );
+      effectiveDifficulty = adaptiveInfo.difficulty;
+      console.log('Using adaptive difficulty:', adaptiveInfo);
+    }
+
     // Check cache first (only for standard requests, not custom)
     let aiResponse;
     const cacheParams = {
@@ -40,7 +57,7 @@ exports.generateWorksheet = async (req, res) => {
       grade: worksheetGrade,
       count: problemCount,
       topics,
-      difficulty
+      difficulty: effectiveDifficulty
     };
     
     if (!naturalLanguageRequest) {
@@ -71,8 +88,9 @@ exports.generateWorksheet = async (req, res) => {
         grade: worksheetGrade,
         count: problemCount,
         topics,
-        difficulty,
-        customRequest: naturalLanguageRequest
+        difficulty: effectiveDifficulty,
+        customRequest: naturalLanguageRequest,
+        problemTypes
       });
       
       // Cache the response and add to problem bank
@@ -95,7 +113,7 @@ exports.generateWorksheet = async (req, res) => {
       generationType: naturalLanguageRequest ? 'natural-language' : 'standard',
       naturalLanguageRequest,
       aiModel: aiResponse.metadata.model,
-      difficulty,
+      difficulty: effectiveDifficulty,
       status: 'in-progress'
     });
 
@@ -108,6 +126,7 @@ exports.generateWorksheet = async (req, res) => {
     res.status(201).json({
       success: true,
       worksheet,
+      adaptiveInfo: adaptiveInfo,
       aiRequestsRemaining: user.subscription.plan === 'premium' 
         ? 'unlimited' 
         : user.subscription.aiRequestsLimit - user.subscription.aiRequestsUsed
@@ -433,6 +452,56 @@ exports.createWorksheetFromPreview = async (req, res) => {
       success: false,
       message: 'Error creating worksheet',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+// Get adaptive difficulty recommendation
+exports.getAdaptiveDifficulty = async (req, res) => {
+  try {
+    const { subject, grade, topics } = req.query;
+    
+    const adaptiveInfo = await AdaptiveDifficultyService.calculateAdaptiveDifficulty(
+      req.user.id,
+      subject || 'Math',
+      grade || '5',
+      topics ? topics.split(',') : []
+    );
+
+    res.json({
+      success: true,
+      ...adaptiveInfo
+    });
+
+  } catch (error) {
+    console.error('Get adaptive difficulty error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error calculating adaptive difficulty'
+    });
+  }
+};
+
+// Get AI queue status
+exports.getQueueStatus = async (req, res) => {
+  try {
+    const aiQueueService = require('../services/aiQueueService');
+    const { aiCircuitBreaker } = require('../services/circuitBreakerService');
+    
+    const queueStatus = aiQueueService.getStatus();
+    const circuitStatus = aiCircuitBreaker.getStatus();
+    
+    res.json({
+      success: true,
+      queue: queueStatus,
+      circuitBreaker: circuitStatus
+    });
+
+  } catch (error) {
+    console.error('Get queue status error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error getting queue status'
     });
   }
 };
