@@ -32,6 +32,8 @@ function WorksheetSolver() {
   const [results, setResults] = useState(null);
   const [timeSpent, setTimeSpent] = useState(0);
   const [startTime] = useState(Date.now());
+  const [timeRemaining, setTimeRemaining] = useState(null);
+  const [timerExpired, setTimerExpired] = useState(false);
 
   useEffect(() => {
     if (id && id !== 'undefined') {
@@ -43,11 +45,23 @@ function WorksheetSolver() {
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setTimeSpent(Math.floor((Date.now() - startTime) / 1000));
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      setTimeSpent(elapsed);
+      
+      // Handle countdown timer if enabled
+      if (worksheet?.timerEnabled && worksheet?.timeLimit) {
+        const remaining = (worksheet.timeLimit * 60) - elapsed;
+        setTimeRemaining(Math.max(0, remaining));
+        
+        if (remaining <= 0 && !timerExpired) {
+          setTimerExpired(true);
+          handleSubmit(true); // Auto-submit when time expires
+        }
+      }
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [startTime]);
+  }, [startTime, worksheet, timerExpired]);
 
   const fetchWorksheet = async () => {
     try {
@@ -75,7 +89,8 @@ function WorksheetSolver() {
     });
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (autoSubmit = false) => {
+    if (timerExpired && !autoSubmit) return; // Prevent manual submit after timer expires
     setSubmitting(true);
     
     try {
@@ -150,7 +165,13 @@ function WorksheetSolver() {
                 <span>•</span>
                 <span className="flex items-center">
                   <Clock className="w-4 h-4 mr-1" />
-                  {formatTime(timeSpent)}
+                  {worksheet.timerEnabled && timeRemaining !== null ? (
+                    <span className={timeRemaining < 60 ? 'text-red-500 font-bold' : ''}>
+                      {formatTime(timeRemaining)} remaining
+                    </span>
+                  ) : (
+                    formatTime(timeSpent)
+                  )}
                 </span>
               </div>
             </div>
@@ -163,6 +184,16 @@ function WorksheetSolver() {
             )}
           </div>
         </div>
+
+        {/* Timer Expired Notification */}
+        {timerExpired && !results && (
+          <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4 mb-6 flex items-center justify-between">
+            <div className="flex items-center">
+              <Clock className="w-5 h-5 text-red-500 mr-2" />
+              <span className="text-red-700 font-medium">Time's up! Your worksheet is being submitted automatically.</span>
+            </div>
+          </div>
+        )}
 
         {/* Problem Navigation */}
         {!results && (
@@ -281,7 +312,7 @@ function WorksheetSolver() {
                 ) : (
                   <button
                     onClick={handleSubmit}
-                    disabled={submitting}
+                    disabled={submitting || timerExpired}
                     className="px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:shadow-lg disabled:opacity-50"
                   >
                     {submitting ? (

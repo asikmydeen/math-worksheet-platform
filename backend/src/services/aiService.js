@@ -1,6 +1,8 @@
 const OpenAI = require('openai');
 const LLMSettings = require('../models/LLMSettings');
 const aiQueueService = require('./aiQueueService');
+const { AIServiceError } = require('../utils/errorTypes');
+const logger = require('../utils/logger');
 
 class AIService {
   static openRouterClient = null;
@@ -283,9 +285,8 @@ class AIService {
         return [];
       }
     } catch (parseError) {
-      console.error('Failed to parse JSON:', parseError.message);
-      console.error('Content preview:', content.substring(0, 200));
-      throw new Error('Invalid JSON response from AI');
+      logger.error('Failed to parse JSON:', { error: parseError.message, preview: content.substring(0, 200) });
+      throw new AIServiceError('Invalid JSON response from AI service', parseError);
     }
   }
 

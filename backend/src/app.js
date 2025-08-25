@@ -2,9 +2,14 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
-const rateLimit = require('express-rate-limit');
 const session = require('express-session');
 const passport = require('./config/passport');
+const { 
+  generalLimiter, 
+  aiGenerationLimiter, 
+  authLimiter,
+  worksheetSubmissionLimiter 
+} = require('./middleware/rateLimitMiddleware');
 
 // Import routes
 const authRoutes = require('./routes/authRoutes');
@@ -30,19 +35,14 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
-  message: 'Too many requests from this IP, please try again later.'
-});
+// Apply general rate limiting to all API routes
+app.use('/api/', generalLimiter);
 
-app.use('/api/', limiter);
+// Import logger
+const logger = require('./utils/logger');
 
 // Logging middleware
-if (process.env.NODE_ENV === 'development') {
-  app.use(morgan('dev'));
-}
+app.use(morgan('combined', { stream: logger.stream }));
 
 // Body parser middleware - Skip for webhook endpoint
 app.use((req, res, next) => {
@@ -79,34 +79,21 @@ app.get('/health', (req, res) => {
   });
 });
 
-// API routes
-app.use('/api/auth', authRoutes);
+// API routes with specific rate limiting
+app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/worksheets', worksheetRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/kid-profiles', kidProfileRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/llm', llmRoutes);
 
+// Import error handling middleware
+const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
+
 // 404 handler
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: 'Route not found'
-  });
-});
+app.use(notFoundHandler);
 
 // Global error handler
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  
-  const statusCode = err.statusCode || 500;
-  const message = err.message || 'Internal server error';
-  
-  res.status(statusCode).json({
-    success: false,
-    message,
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
-  });
-});
+app.use(errorHandler);
 
 module.exports = app;

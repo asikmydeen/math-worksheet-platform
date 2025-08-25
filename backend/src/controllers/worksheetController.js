@@ -16,7 +16,9 @@ exports.generateWorksheet = async (req, res) => {
       difficulty = 'medium',
       naturalLanguageRequest,
       title,
-      problemTypes
+      problemTypes,
+      timerEnabled = false,
+      timeLimit
     } = req.body;
 
     // Get user and active kid profile
@@ -114,6 +116,8 @@ exports.generateWorksheet = async (req, res) => {
       naturalLanguageRequest,
       aiModel: aiResponse.metadata.model,
       difficulty: effectiveDifficulty,
+      timerEnabled,
+      timeLimit: timerEnabled ? timeLimit : undefined,
       status: 'in-progress'
     });
 

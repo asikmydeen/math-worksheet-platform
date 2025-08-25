@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
-import { X, BookOpen, Sparkles, Loader, Info } from 'lucide-react';
+import { X, BookOpen, Sparkles, Loader, Info, Clock } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useDarkModeClasses } from './DarkModeWrapper';
 import WorksheetPreview from './WorksheetPreview';
@@ -44,7 +44,9 @@ function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
       difficulty: 'medium',
       title: '',
       naturalLanguageRequest: '',
-      problemTypes: []
+      problemTypes: [],
+      timerEnabled: false,
+      timeLimit: 30
     };
   });
   
@@ -424,6 +426,46 @@ function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
                 placeholder={`e.g., ${formData.subject} Practice for Week 5`}
                 className={`w-full px-3 py-2 border ${darkMode.inputBorder} ${darkMode.inputBg} ${darkMode.inputText} rounded-lg focus:outline-none focus:border-purple-500`}
               />
+            </div>
+
+            <div>
+              <label className={`block text-sm font-medium ${darkMode.text} mb-1`}>Timer Settings</label>
+              <div className={`p-3 border ${darkMode.border} ${darkMode.inputBg} rounded-lg space-y-3`}>
+                <label className={`flex items-center space-x-2 cursor-pointer`}>
+                  <input
+                    type="checkbox"
+                    checked={formData.timerEnabled}
+                    onChange={(e) => setFormData({...formData, timerEnabled: e.target.checked})}
+                    className="rounded text-purple-500 focus:ring-purple-500"
+                  />
+                  <span className={`text-sm ${darkMode.text}`}>Enable timer for this worksheet</span>
+                </label>
+                
+                {formData.timerEnabled && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className={`block text-xs font-medium ${darkMode.textSecondary} mb-1`}>Time Limit (minutes)</label>
+                      <select
+                        value={formData.timeLimit}
+                        onChange={(e) => setFormData({...formData, timeLimit: parseInt(e.target.value)})}
+                        className={`w-full px-2 py-1 text-sm border ${darkMode.inputBorder} ${darkMode.inputBg} ${darkMode.inputText} rounded focus:outline-none focus:border-purple-500`}
+                      >
+                        <option value="10">10 minutes</option>
+                        <option value="15">15 minutes</option>
+                        <option value="20">20 minutes</option>
+                        <option value="30">30 minutes</option>
+                        <option value="45">45 minutes</option>
+                        <option value="60">60 minutes</option>
+                      </select>
+                    </div>
+                    <div className="flex items-end">
+                      <p className={`text-xs ${darkMode.textSecondary}`}>
+                        Students will see a countdown timer during practice
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         ) : (

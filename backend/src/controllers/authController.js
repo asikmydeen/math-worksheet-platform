@@ -3,6 +3,12 @@ const AllowedEmail = require('../models/AllowedEmail');
 const KidProfile = require('../models/KidProfile');
 const Worksheet = require('../models/Worksheet');
 const jwt = require('jsonwebtoken');
+const { 
+  AuthenticationError, 
+  ValidationError,
+  ResourceNotFoundError 
+} = require('../utils/errorTypes');
+const logger = require('../utils/logger');
 
 // Google OAuth callback handler
 exports.googleCallback = async (accessToken, refreshToken, profile, done) => {
