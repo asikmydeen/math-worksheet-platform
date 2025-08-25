@@ -5,6 +5,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useDarkModeClasses } from './DarkModeWrapper';
 import WorksheetPreview from './WorksheetPreview';
+import AILoader from './AILoader';
 
 function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
   const { isDarkMode } = useTheme();
@@ -243,8 +244,15 @@ function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
-      <div className={`${darkMode.card} rounded-2xl shadow-2xl p-4 sm:p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto`}>
+    <>
+      {loading && (
+        <AILoader 
+          subject={formData.subject} 
+          problemCount={formData.problemCount}
+        />
+      )}
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
+        <div className={`${darkMode.card} rounded-2xl shadow-2xl p-4 sm:p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto`}>
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-3">
             <h2 className={`text-xl sm:text-2xl font-bold ${darkMode.text}`}>Generate New Worksheet</h2>
@@ -619,7 +627,8 @@ function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
           }}
         />
       )}
-    </div>
+      </div>
+    </>
   );
 }
 

@@ -290,6 +290,17 @@ class AIService {
       content = content.trim();
     }
     
+    // Check if response appears to be truncated
+    if (!content.endsWith('}') && !content.endsWith(']')) {
+      // Try to complete truncated JSON
+      if (content.includes('[') && !content.includes(']')) {
+        content += ']';
+      } else if (content.includes('{') && !content.includes('}')) {
+        content += '}';
+      }
+      console.warn('Response appears to be truncated, attempting to fix...');
+    }
+    
     try {
       const parsed = JSON.parse(content);
       
@@ -309,7 +320,12 @@ class AIService {
         return [];
       }
     } catch (parseError) {
-      logger.error('Failed to parse JSON:', { error: parseError.message, preview: content.substring(0, 200) });
+      logger.error('Failed to parse JSON:', { 
+        error: parseError.message, 
+        contentLength: content.length,
+        preview: content.substring(0, 200),
+        ending: content.substring(content.length - 100)
+      });
       throw new AIServiceError('Invalid JSON response from AI service', parseError);
     }
   }
@@ -348,6 +364,31 @@ class AIService {
   static async generateProblemsWithRetry(params, maxRetries = 3) {
     let lastError;
     const delays = [1000, 2000, 4000]; // Exponential backoff delays
+    
+    // For large problem counts, generate in batches
+    if (params.count >= 25) {
+      console.log(`Generating ${params.count} problems in batches...`);
+      const batchSize = 15;
+      const batches = Math.ceil(params.count / batchSize);
+      let allProblems = [];
+      
+      for (let i = 0; i < batches; i++) {
+        const batchCount = Math.min(batchSize, params.count - (i * batchSize));
+        const batchParams = { ...params, count: batchCount };
+        
+        console.log(`Generating batch ${i + 1}/${batches} with ${batchCount} problems`);
+        
+        try {
+          const batchProblems = await this.generateProblemsWithRetry(batchParams, maxRetries);
+          allProblems = [...allProblems, ...batchProblems];
+        } catch (error) {
+          console.error(`Failed to generate batch ${i + 1}:`, error.message);
+          throw error;
+        }
+      }
+      
+      return allProblems.slice(0, params.count); // Ensure exact count
+    }
     
     // Define fallback models
     const fallbackModels = [
@@ -588,7 +629,7 @@ IMPORTANT: For multiple-choice, use "choices" array and ensure "answer" matches 
           }
         ],
         temperature: config.temperature || 0.7,
-        max_tokens: config.maxTokens || (count >= 20 ? 4000 : 2000),
+        max_tokens: config.maxTokens || (count >= 25 ? 8000 : count >= 20 ? 6000 : count >= 15 ? 4000 : 2000),
         top_p: config.topP || 1
       };
       
