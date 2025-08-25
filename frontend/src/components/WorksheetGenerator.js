@@ -25,7 +25,8 @@ function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
         const parsed = JSON.parse(savedDraft);
         return {
           ...parsed,
-          topics: parsed.topics || []
+          topics: parsed.topics || [],
+          problemTypes: parsed.problemTypes || []
         };
       } catch (e) {
         console.error('Failed to load draft:', e);
@@ -398,12 +399,13 @@ function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
                   <label key={type.id} className={`flex items-center space-x-2 cursor-pointer ${darkMode.cardHover} p-1 rounded`}>
                     <input
                       type="checkbox"
-                      checked={formData.problemTypes.includes(type.id)}
+                      checked={formData.problemTypes?.includes(type.id) || false}
                       onChange={(e) => {
+                        const currentTypes = formData.problemTypes || [];
                         if (e.target.checked) {
-                          setFormData({...formData, problemTypes: [...formData.problemTypes, type.id]});
+                          setFormData({...formData, problemTypes: [...currentTypes, type.id]});
                         } else {
-                          setFormData({...formData, problemTypes: formData.problemTypes.filter(t => t !== type.id)});
+                          setFormData({...formData, problemTypes: currentTypes.filter(t => t !== type.id)});
                         }
                       }}
                       className="rounded text-purple-500 focus:ring-purple-500"
