@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import AuthContext from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import AppWithShortcuts from './components/AppWithShortcuts';
 import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -199,7 +200,9 @@ function App() {
     return (
       <ThemeProvider>
         <AuthContext.Provider value={{ user, token, login, register, logout, loginWithToken, updateUser, activeKidProfile, switchKidProfile }}>
-          <KidProfileSetup onComplete={handleProfileSetupComplete} />
+          <AppWithShortcuts>
+            <KidProfileSetup onComplete={handleProfileSetupComplete} />
+          </AppWithShortcuts>
         </AuthContext.Provider>
       </ThemeProvider>
     );
@@ -209,21 +212,23 @@ function App() {
     <ThemeProvider>
       <AuthContext.Provider value={{ user, token, login, register, logout, loginWithToken, updateUser, activeKidProfile, switchKidProfile }}>
         <Router>
-          <Routes>
-            <Route path="/" element={user ? <Navigate to="/dashboard" /> : <LandingPage />} />
-            <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
-            <Route path="/access-denied" element={<AccessDenied />} />
-            <Route path="/pricing" element={<Navigate to="/#pricing" />} />
-            <Route path="/auth/google/success" element={<GoogleCallback />} />
-            <Route path="/payment-success" element={user ? <PaymentSuccess /> : <Navigate to="/login" />} />
-            <Route path="/dashboard" element={user ? <Dashboard /> : <Navigate to="/login" />} />
-            <Route path="/worksheets" element={user ? <Worksheets /> : <Navigate to="/login" />} />
-            <Route path="/worksheet/:id" element={user ? <WorksheetSolver /> : <Navigate to="/login" />} />
-            <Route path="/worksheet/:id/view" element={user ? <WorksheetView /> : <Navigate to="/login" />} />
-            <Route path="/analytics" element={user ? <Analytics /> : <Navigate to="/login" />} />
-            <Route path="/kids" element={user ? <KidManagement /> : <Navigate to="/login" />} />
-            <Route path="/admin" element={user?.accessLevel === 'admin' ? <ComprehensiveAdminDashboard /> : <Navigate to="/dashboard" />} />
-          </Routes>
+          <AppWithShortcuts>
+            <Routes>
+              <Route path="/" element={user ? <Navigate to="/dashboard" /> : <LandingPage />} />
+              <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
+              <Route path="/access-denied" element={<AccessDenied />} />
+              <Route path="/pricing" element={<Navigate to="/#pricing" />} />
+              <Route path="/auth/google/success" element={<GoogleCallback />} />
+              <Route path="/payment-success" element={user ? <PaymentSuccess /> : <Navigate to="/login" />} />
+              <Route path="/dashboard" element={user ? <Dashboard /> : <Navigate to="/login" />} />
+              <Route path="/worksheets" element={user ? <Worksheets /> : <Navigate to="/login" />} />
+              <Route path="/worksheet/:id" element={user ? <WorksheetSolver /> : <Navigate to="/login" />} />
+              <Route path="/worksheet/:id/view" element={user ? <WorksheetView /> : <Navigate to="/login" />} />
+              <Route path="/analytics" element={user ? <Analytics /> : <Navigate to="/login" />} />
+              <Route path="/kids" element={user ? <KidManagement /> : <Navigate to="/login" />} />
+              <Route path="/admin" element={user?.accessLevel === 'admin' ? <ComprehensiveAdminDashboard /> : <Navigate to="/dashboard" />} />
+            </Routes>
+          </AppWithShortcuts>
         </Router>
       </AuthContext.Provider>
     </ThemeProvider>

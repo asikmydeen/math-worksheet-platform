@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import ProfileSwitcher from './ProfileSwitcher';
+import MobileMenu from './MobileMenu';
 import {
   Calculator,
   Home,
@@ -14,7 +15,8 @@ import {
   Baby,
   Moon,
   Sun,
-  Edit2
+  Edit2,
+  Menu
 } from 'lucide-react';
 
 function Layout({ children }) {
@@ -22,6 +24,7 @@ function Layout({ children }) {
   const { isDarkMode, toggleDarkMode } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -43,14 +46,26 @@ function Layout({ children }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
+              {/* Mobile menu button */}
+              <button
+                onClick={() => setMobileMenuOpen(true)}
+                className={`lg:hidden p-2 rounded-lg mr-3 transition-colors ${
+                  isDarkMode 
+                    ? 'text-gray-300 hover:text-gray-100 hover:bg-gray-700' 
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                }`}
+              >
+                <Menu className="w-6 h-6" />
+              </button>
+
               <Link to="/dashboard" className="flex items-center">
-                <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
-                  <Calculator className="w-6 h-6 text-white" />
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
+                  <Calculator className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
-                <h1 className={`ml-3 text-xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>BrainyBees</h1>
+                <h1 className={`ml-2 sm:ml-3 text-lg sm:text-xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>BrainyBees</h1>
               </Link>
 
-              <nav className="ml-10 flex space-x-4">
+              <nav className="ml-10 hidden lg:flex space-x-4">
                 {navigation.map(item => {
                   const Icon = item.icon;
                   const isActive = location.pathname === item.href;
@@ -77,7 +92,7 @@ function Layout({ children }) {
               </nav>
             </div>
 
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               {/* Dark mode toggle */}
               <button
                 onClick={toggleDarkMode}
@@ -91,18 +106,21 @@ function Layout({ children }) {
                 {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
               </button>
 
-              {/* Profile Switcher */}
-              <ProfileSwitcher 
-                currentProfile={activeKidProfile}
-                onProfileSwitch={switchKidProfile}
-              />
+              {/* Profile Switcher - hide on very small screens */}
+              <div className="hidden sm:block">
+                <ProfileSwitcher 
+                  currentProfile={activeKidProfile}
+                  onProfileSwitch={switchKidProfile}
+                />
+              </div>
 
-              {/* User info */}
-              <div className="flex items-center space-x-2 text-sm">
+              {/* User info - hide on mobile */}
+              <div className="hidden md:flex items-center space-x-2 text-sm">
                 <User className={`w-4 h-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
                 <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>{user?.name}</span>
               </div>
 
+              {/* Logout button - always visible */}
               <button
                 onClick={handleLogout}
                 className={`p-2 rounded-lg transition-colors ${
@@ -110,6 +128,7 @@ function Layout({ children }) {
                     ? 'text-gray-300 hover:text-gray-100 hover:bg-gray-700' 
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                 }`}
+                title="Logout"
               >
                 <LogOut className="w-5 h-5" />
               </button>
@@ -118,8 +137,16 @@ function Layout({ children }) {
         </div>
       </header>
 
+      {/* Mobile Menu */}
+      <MobileMenu 
+        isOpen={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+        user={user}
+        isDarkMode={isDarkMode}
+      />
+
       {/* Main Content */}
-      <main className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+      <main className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
         {children}
       </main>
     </div>

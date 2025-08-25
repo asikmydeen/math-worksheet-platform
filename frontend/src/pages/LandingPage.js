@@ -255,15 +255,15 @@ function LandingPage() {
               <span className={`text-sm ${isDarkMode ? 'text-purple-400' : 'text-purple-600'} font-medium`}>AI-Powered Educational Worksheets</span>
             </div>
 
-            <h1 className={`text-4xl sm:text-6xl lg:text-7xl font-bold ${darkMode.text} mb-6`}>
+            <h1 className={`text-3xl sm:text-5xl lg:text-6xl font-bold ${darkMode.text} mb-6`}>
               Create <span className="bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">Amazing</span> Worksheets in <span className="bg-gradient-to-r from-blue-500 to-green-500 bg-clip-text text-transparent">Seconds</span>
             </h1>
 
-            <p className={`text-xl ${darkMode.textSecondary} max-w-3xl mx-auto mb-12 leading-relaxed`}>
+            <p className={`text-lg sm:text-xl ${darkMode.textSecondary} max-w-3xl mx-auto mb-8 sm:mb-12 leading-relaxed`}>
               Transform education with AI-powered worksheet generation. Create customizable, engaging worksheets for any subject and grade level. Track progress, analyze performance, and accelerate learning.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12 sm:mb-16">
               <Link
                 to="/login"
                 className="group px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-semibold text-lg hover:shadow-lg transform hover:scale-105 transition-all flex items-center"

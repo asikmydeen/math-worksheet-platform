@@ -1,0 +1,62 @@
+{
+  "short_name": "BrainyBees",
+  "name": "BrainyBees Educational Platform",
+  "description": "AI-powered educational worksheets for students",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "logo192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "logo512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#8B5CF6",
+  "background_color": "#ffffff",
+  "orientation": "portrait-primary",
+  "categories": ["education", "kids", "productivity"],
+  "screenshots": [
+    {
+      "src": "/screenshots/dashboard.png",
+      "type": "image/png",
+      "sizes": "1280x720",
+      "label": "Dashboard view"
+    },
+    {
+      "src": "/screenshots/worksheet.png",
+      "type": "image/png",
+      "sizes": "1280x720",
+      "label": "Worksheet solver"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Create Worksheet",
+      "short_name": "Create",
+      "description": "Generate a new worksheet",
+      "url": "/worksheets?action=create",
+      "icons": [{ "src": "/icons/create.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "My Progress",
+      "short_name": "Progress",
+      "description": "View your learning progress",
+      "url": "/analytics",
+      "icons": [{ "src": "/icons/progress.png", "sizes": "192x192" }]
+    }
+  ],
+  "prefer_related_applications": false,
+  "related_applications": []
+}

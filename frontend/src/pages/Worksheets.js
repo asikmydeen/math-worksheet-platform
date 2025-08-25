@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import WorksheetGenerator from '../components/WorksheetGenerator';
+import ResponsiveTable from '../components/ResponsiveTable';
 import api from '../services/api';
 import { useTheme } from '../contexts/ThemeContext';
 import { useDarkModeClasses } from '../components/DarkModeWrapper';
@@ -248,7 +249,7 @@ function Worksheets() {
 
         {/* Filters and Search */}
         <div className={`${darkMode.card} rounded-xl shadow-sm p-4`}>
-          <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -312,157 +313,138 @@ function Worksheets() {
               </button>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className={`border-b ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50'}`}>
-                  <tr>
-                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode.textMuted}`}>
-                      Status
-                    </th>
-                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode.textMuted}`}>
-                      Title
-                    </th>
-                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode.textMuted}`}>
-                      Subject
-                    </th>
-                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode.textMuted}`}>
-                      Grade
-                    </th>
-                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode.textMuted}`}>
-                      Topics
-                    </th>
-                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode.textMuted}`}>
-                      Problems
-                    </th>
-                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode.textMuted}`}>
-                      Score
-                    </th>
-                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode.textMuted}`}>
-                      Date
-                    </th>
-                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode.textMuted}`}>
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className={`divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
-                  {filteredWorksheets.map((worksheet, index) => (
-                    <tr 
-                      key={worksheet._id} 
-                      ref={index === filteredWorksheets.length - 1 ? lastWorksheetElementRef : null}
-                      className={`${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'}`}
+            <ResponsiveTable
+              columns={[
+                {
+                  key: 'status',
+                  label: 'Status',
+                  render: (value, worksheet) => getStatusIcon(worksheet.status)
+                },
+                {
+                  key: 'title',
+                  label: 'Title',
+                  render: (value, worksheet) => (
+                    <div>
+                      <Link 
+                        to={`/worksheet/${worksheet._id}`}
+                        className="text-purple-600 hover:text-purple-700 font-medium"
+                      >
+                        {worksheet.title}
+                      </Link>
+                      {worksheet.description && (
+                        <p className={`text-sm ${darkMode.textSecondary} mt-1`}>{worksheet.description}</p>
+                      )}
+                    </div>
+                  )
+                },
+                {
+                  key: 'subject',
+                  label: 'Subject',
+                  render: (value) => (
+                    <span className={`px-2 py-1 text-xs rounded-full font-medium ${isDarkMode ? 'bg-blue-900 text-blue-300' : 'bg-blue-100 text-blue-700'}`}>
+                      {value || 'Math'}
+                    </span>
+                  )
+                },
+                {
+                  key: 'grade',
+                  label: 'Grade',
+                  render: (value) => <span className={`text-sm ${darkMode.text}`}>Grade {value}</span>
+                },
+                {
+                  key: 'topics',
+                  label: 'Topics',
+                  render: (topics) => (
+                    <div className="flex flex-wrap gap-1">
+                      {topics?.slice(0, 3).map((topic, idx) => (
+                        <span key={idx} className={`px-2 py-1 text-xs rounded ${isDarkMode ? 'bg-purple-900 text-purple-300' : 'bg-purple-100 text-purple-700'}`}>
+                          {topic}
+                        </span>
+                      ))}
+                      {topics?.length > 3 && (
+                        <span className={`px-2 py-1 text-xs rounded ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
+                          +{topics.length - 3}
+                        </span>
+                      )}
+                    </div>
+                  )
+                },
+                {
+                  key: 'problemCount',
+                  label: 'Problems',
+                  render: (value, worksheet) => (
+                    <span className={`text-sm ${darkMode.text}`}>
+                      {worksheet.problems?.length || value || 0}
+                    </span>
+                  )
+                },
+                {
+                  key: 'score',
+                  label: 'Score',
+                  render: (value) => value !== null ? (
+                    <span className={`text-sm font-medium ${
+                      value >= 80 ? 'text-green-600' : 
+                      value >= 60 ? 'text-yellow-600' : 
+                      'text-red-600'
+                    }`}>
+                      {value}%
+                    </span>
+                  ) : (
+                    <span className={`text-sm ${darkMode.textMuted}`}>-</span>
+                  )
+                },
+                {
+                  key: 'createdAt',
+                  label: 'Date',
+                  render: (value) => (
+                    <span className={`text-sm ${darkMode.textSecondary}`}>
+                      {formatDate(value)}
+                    </span>
+                  )
+                }
+              ]}
+              data={filteredWorksheets}
+              isDarkMode={isDarkMode}
+              actions={(worksheet) => (
+                <div className="flex items-center gap-3">
+                  {worksheet.status !== 'completed' ? (
+                    <Link
+                      to={`/worksheet/${worksheet._id}`}
+                      className="text-purple-600 hover:text-purple-700 flex items-center gap-1"
+                      title="Solve Quiz"
                     >
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {getStatusIcon(worksheet.status)}
-                      </td>
-                      <td className="px-6 py-4">
-                        <Link 
-                          to={`/worksheet/${worksheet._id}`}
-                          className="text-purple-600 hover:text-purple-700 font-medium"
-                        >
-                          {worksheet.title}
-                        </Link>
-                        {worksheet.description && (
-                          <p className={`text-sm ${darkMode.textSecondary} mt-1`}>{worksheet.description}</p>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs rounded-full font-medium ${isDarkMode ? 'bg-blue-900 text-blue-300' : 'bg-blue-100 text-blue-700'}`}>
-                          {worksheet.subject || 'Math'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`text-sm ${darkMode.text}`}>Grade {worksheet.grade}</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-wrap gap-1">
-                          {worksheet.topics?.slice(0, 3).map((topic, idx) => (
-                            <span key={idx} className={`px-2 py-1 text-xs rounded ${isDarkMode ? 'bg-purple-900 text-purple-300' : 'bg-purple-100 text-purple-700'}`}>
-                              {topic}
-                            </span>
-                          ))}
-                          {worksheet.topics?.length > 3 && (
-                            <span className={`px-2 py-1 text-xs rounded ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
-                              +{worksheet.topics.length - 3}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`text-sm ${darkMode.text}`}>
-                          {worksheet.problems?.length || worksheet.problemCount || 0}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {worksheet.score !== null ? (
-                          <div className="flex items-center">
-                            <span className={`text-sm font-medium ${
-                              worksheet.score >= 80 ? 'text-green-600' : 
-                              worksheet.score >= 60 ? 'text-yellow-600' : 
-                              'text-red-600'
-                            }`}>
-                              {worksheet.score}%
-                            </span>
-                          </div>
-                        ) : (
-                          <span className={`text-sm ${darkMode.textMuted}`}>-</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`text-sm ${darkMode.textSecondary}`}>
-                          {formatDate(worksheet.createdAt)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center space-x-2">
-                          {worksheet.status !== 'completed' ? (
-                            <Link
-                              to={`/worksheet/${worksheet._id}`}
-                              className="text-purple-600 hover:text-purple-700"
-                              title="Solve Quiz"
-                            >
-                              <Play className="w-4 h-4" />
-                            </Link>
-                          ) : (
-                            <Link
-                              to={`/worksheet/${worksheet._id}`}
-                              className="text-blue-600 hover:text-blue-700"
-                              title="Review"
-                            >
-                              <FileText className="w-4 h-4" />
-                            </Link>
-                          )}
-                          <Link
-                            to={`/worksheet/${worksheet._id}/view`}
-                            className="text-green-600 hover:text-green-700"
-                            title="Printable View"
-                          >
-                            <Printer className="w-4 h-4" />
-                          </Link>
-                          <button
-                            onClick={() => handleDelete(worksheet._id)}
-                            className="text-red-600 hover:text-red-700"
-                            title="Delete"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  {loading && !initialLoad && (
-                    <tr>
-                      <td colSpan="9" className="px-6 py-4 text-center">
-                        <div className="flex items-center justify-center">
-                          <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
-                          <span className={`ml-2 ${darkMode.textSecondary}`}>Loading more worksheets...</span>
-                        </div>
-                      </td>
-                    </tr>
+                      <Play className="w-4 h-4" />
+                      <span className="lg:hidden">Solve</span>
+                    </Link>
+                  ) : (
+                    <Link
+                      to={`/worksheet/${worksheet._id}`}
+                      className="text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                      title="Review"
+                    >
+                      <FileText className="w-4 h-4" />
+                      <span className="lg:hidden">Review</span>
+                    </Link>
                   )}
-                </tbody>
-              </table>
-            </div>
+                  <Link
+                    to={`/worksheet/${worksheet._id}/view`}
+                    className="text-green-600 hover:text-green-700 flex items-center gap-1"
+                    title="Printable View"
+                  >
+                    <Printer className="w-4 h-4" />
+                    <span className="lg:hidden">Print</span>
+                  </Link>
+                  <button
+                    onClick={() => handleDelete(worksheet._id)}
+                    className="text-red-600 hover:text-red-700 flex items-center gap-1"
+                    title="Delete"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span className="lg:hidden">Delete</span>
+                  </button>
+                </div>
+              )}
+            />
           )}
         </div>
 

@@ -197,22 +197,22 @@ function WorksheetSolver() {
 
         {/* Problem Navigation */}
         {!results && (
-          <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
-            <div className="flex items-center justify-between">
+          <div className="bg-white rounded-xl shadow-sm p-3 sm:p-4 mb-6">
+            <div className="flex items-center justify-between gap-2">
               <button
                 onClick={() => setCurrentProblem(Math.max(0, currentProblem - 1))}
                 disabled={currentProblem === 0}
-                className="p-2 text-gray-600 hover:text-purple-600 disabled:text-gray-300"
+                className="p-2 text-gray-600 hover:text-purple-600 disabled:text-gray-300 shrink-0"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
               
-              <div className="flex space-x-2">
+              <div className="flex gap-1 sm:gap-2 overflow-x-auto no-scrollbar px-2">
                 {worksheet.problems.map((_, index) => (
                   <button
                     key={index}
                     onClick={() => setCurrentProblem(index)}
-                    className={`w-10 h-10 rounded-lg font-medium transition-all transform hover:scale-110 ${
+                    className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg font-medium transition-all transform hover:scale-110 shrink-0 text-sm sm:text-base ${
                       currentProblem === index
                         ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg scale-110'
                         : answers[index]
@@ -228,7 +228,7 @@ function WorksheetSolver() {
               <button
                 onClick={() => setCurrentProblem(Math.min(worksheet.problems.length - 1, currentProblem + 1))}
                 disabled={currentProblem === worksheet.problems.length - 1}
-                className="p-2 text-gray-600 hover:text-purple-600 disabled:text-gray-300"
+                className="p-2 text-gray-600 hover:text-purple-600 disabled:text-gray-300 shrink-0"
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
@@ -238,13 +238,13 @@ function WorksheetSolver() {
 
         {/* Problem Display */}
         {!results ? (
-          <div className={`${darkMode.card} rounded-xl shadow-sm p-8`}>
+          <div className={`${darkMode.card} rounded-xl shadow-sm p-4 sm:p-6 lg:p-8`}>
             <div className="mb-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className={`text-lg font-semibold ${darkMode.text}`}>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-4">
+                <h2 className={`text-base sm:text-lg font-semibold ${darkMode.text}`}>
                   Problem {currentProblem + 1} of {worksheet.problems.length}
                 </h2>
-                <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">
+                <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs sm:text-sm self-start sm:self-auto">
                   {worksheet.problems[currentProblem].topic}
                 </span>
               </div>

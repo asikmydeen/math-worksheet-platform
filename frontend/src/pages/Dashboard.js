@@ -145,12 +145,12 @@ function Dashboard() {
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className={`${darkMode.card} rounded-xl p-6 shadow-sm`}>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className={`${darkMode.card} rounded-xl p-4 sm:p-6 shadow-sm`}>
             <div className="flex items-center justify-between">
               <div>
-                <p className={`text-sm ${darkMode.textSecondary}`}>Total Worksheets</p>
-                <p className={`text-2xl font-bold ${darkMode.text}`}>
+                <p className={`text-xs sm:text-sm ${darkMode.textSecondary}`}>Total Worksheets</p>
+                <p className={`text-xl sm:text-2xl font-bold ${darkMode.text}`}>
                   {stats?.userStats?.totalWorksheets || 0}
                 </p>
               </div>
@@ -201,7 +201,7 @@ function Dashboard() {
         {/* Quick Actions */}
         <div className={`${darkMode.card} rounded-xl p-6 shadow-sm`}>
           <h2 className={`text-lg font-semibold ${darkMode.text} mb-4`}>Quick Actions</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             <button
               onClick={() => setShowGenerator(true)}
               className={`p-4 border-2 border-dashed ${isDarkMode ? 'border-purple-800 hover:border-purple-600 hover:bg-purple-900/20' : 'border-purple-300 hover:border-purple-500 hover:bg-purple-50'} rounded-lg transition-all group`}

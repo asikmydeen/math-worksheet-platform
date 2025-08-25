@@ -221,11 +221,11 @@ function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className={`${darkMode.card} rounded-2xl shadow-2xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto`}>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
+      <div className={`${darkMode.card} rounded-2xl shadow-2xl p-4 sm:p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto`}>
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-3">
-            <h2 className={`text-2xl font-bold ${darkMode.text}`}>Generate New Worksheet</h2>
+            <h2 className={`text-xl sm:text-2xl font-bold ${darkMode.text}`}>Generate New Worksheet</h2>
             {draftSaved && (
               <span className="text-sm text-green-500 animate-fade-in">Draft saved</span>
             )}
@@ -270,7 +270,7 @@ function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
 
         {mode === 'standard' ? (
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className={`block text-sm font-medium ${darkMode.text} mb-1`}>Subject</label>
                 <select
@@ -301,7 +301,7 @@ function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className={`block text-sm font-medium ${darkMode.text} mb-1`}>Number of Problems</label>
                 <select
@@ -364,7 +364,7 @@ function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
 
             <div>
               <label className={`block text-sm font-medium ${darkMode.text} mb-1`}>Topics (Optional)</label>
-              <div className={`grid grid-cols-3 gap-2 max-h-32 overflow-y-auto p-2 border ${darkMode.border} ${darkMode.inputBg} rounded-lg`}>
+              <div className={`grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-32 overflow-y-auto p-2 border ${darkMode.border} ${darkMode.inputBg} rounded-lg`}>
                 {getTopicsForSubject().map(topic => (
                   <label key={topic} className={`flex items-center space-x-2 cursor-pointer ${darkMode.cardHover} p-1 rounded`}>
                     <input
@@ -442,7 +442,7 @@ function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
                 </label>
                 
                 {formData.timerEnabled && (
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className={`block text-xs font-medium ${darkMode.textSecondary} mb-1`}>Time Limit (minutes)</label>
                       <select
@@ -470,7 +470,7 @@ function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className={`block text-sm font-medium ${darkMode.text} mb-1`}>Subject</label>
                 <select

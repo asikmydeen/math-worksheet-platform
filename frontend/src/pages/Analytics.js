@@ -282,8 +282,8 @@ function Analytics() {
         {analytics && activeTab === 'overview' && (
           <>
             {/* Key Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-          <div className={`${darkMode.card} rounded-xl p-4 shadow-sm`}>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+          <div className={`${darkMode.card} rounded-xl p-3 sm:p-4 shadow-sm`}>
             <div className="flex items-center justify-between mb-2">
               <BookOpen className="w-8 h-8 text-purple-500" />
               <span className="text-xs text-green-600 font-medium flex items-center">
@@ -295,7 +295,7 @@ function Analytics() {
             <p className={`text-sm ${darkMode.textSecondary}`}>Total Worksheets</p>
           </div>
 
-          <div className={`${darkMode.card} rounded-xl p-4 shadow-sm`}>
+          <div className={`${darkMode.card} rounded-xl p-3 sm:p-4 shadow-sm`}>
             <div className="flex items-center justify-between mb-2">
               <CheckCircle className="w-8 h-8 text-green-500" />
               <span className="text-xs text-green-600 font-medium">
@@ -306,7 +306,7 @@ function Analytics() {
             <p className={`text-sm ${darkMode.textSecondary}`}>Completed</p>
           </div>
 
-          <div className={`${darkMode.card} rounded-xl p-4 shadow-sm`}>
+          <div className={`${darkMode.card} rounded-xl p-3 sm:p-4 shadow-sm`}>
             <div className="flex items-center justify-between mb-2">
               <Target className="w-8 h-8 text-blue-500" />
               <span className={`text-xs font-medium flex items-center ${
@@ -320,7 +320,7 @@ function Analytics() {
             <p className={`text-sm ${darkMode.textSecondary}`}>Average Score</p>
           </div>
 
-          <div className={`${darkMode.card} rounded-xl p-4 shadow-sm`}>
+          <div className={`${darkMode.card} rounded-xl p-3 sm:p-4 shadow-sm`}>
             <div className="flex items-center justify-between mb-2">
               <Clock className="w-8 h-8 text-orange-500" />
             </div>
@@ -328,7 +328,7 @@ function Analytics() {
             <p className={`text-sm ${darkMode.textSecondary}`}>Time Spent</p>
           </div>
 
-          <div className={`${darkMode.card} rounded-xl p-4 shadow-sm`}>
+          <div className={`${darkMode.card} rounded-xl p-3 sm:p-4 shadow-sm`}>
             <div className="flex items-center justify-between mb-2">
               <Zap className="w-8 h-8 text-yellow-500" />
             </div>
@@ -336,7 +336,7 @@ function Analytics() {
             <p className={`text-sm ${darkMode.textSecondary}`}>Day Streak</p>
           </div>
 
-          <div className={`${darkMode.card} rounded-xl p-4 shadow-sm`}>
+          <div className={`${darkMode.card} rounded-xl p-3 sm:p-4 shadow-sm`}>
             <div className="flex items-center justify-between mb-2">
               <Activity className="w-8 h-8 text-purple-500" />
             </div>
@@ -571,7 +571,6 @@ function Analytics() {
             </div>
           </div>
         </div>
-          </>
         )}
       </div>
     </Layout>
