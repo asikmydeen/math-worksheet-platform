@@ -395,13 +395,19 @@ class AIService {
       'openai/gpt-4o-mini',
       'openai/gpt-3.5-turbo',
       'anthropic/claude-3-haiku',
-      'google/gemini-flash-1.5-8b',
+      'google/gemini-1.5-flash',
       'meta-llama/llama-3.2-3b-instruct:free'
     ];
     
     const originalModel = this.currentSettings?.selectedModel || fallbackModels[0];
+    console.log('Original model:', originalModel);
+    
+    // If the original model is not in our fallback list, start with the first fallback
     let modelIndex = fallbackModels.indexOf(originalModel);
-    if (modelIndex === -1) modelIndex = 0;
+    if (modelIndex === -1) {
+      console.log('Model not in fallback list, using first fallback:', fallbackModels[0]);
+      modelIndex = 0;
+    }
     
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
@@ -643,8 +649,13 @@ IMPORTANT: For multiple-choice, use "choices" array and ensure "answer" matches 
         execute: async () => client.chat.completions.create(requestParams)
       });
 
-      const content = response.choices[0].message.content;
+      const content = response.choices[0]?.message?.content || '';
       console.log('AI Response length:', content.length);
+      
+      if (!content || content.length === 0) {
+        console.error('Empty response from AI model:', model);
+        throw new Error('Empty response from AI service');
+      }
       
       let problems = this.parseModelResponse(content, model);
       

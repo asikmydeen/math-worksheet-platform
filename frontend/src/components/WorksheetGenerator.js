@@ -146,6 +146,7 @@ function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
 
   const handleGenerate = async () => {
     setError('');
+    console.log('Starting generation, setting loading to true');
     setLoading(true);
 
     try {

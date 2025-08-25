@@ -42,7 +42,7 @@ function AILoader({ subject = "worksheet", problemCount = 10 }) {
   const Icon = currentMessage.icon;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
       <div className={`
         ${isDarkMode ? 'bg-gray-900' : 'bg-white'} 
         rounded-2xl shadow-2xl p-8 max-w-md w-full
