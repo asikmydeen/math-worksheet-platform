@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import WorksheetGenerator from '../components/WorksheetGenerator';
@@ -35,16 +35,46 @@ function Worksheets() {
   const [sortBy, setSortBy] = useState('createdAt');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [initialLoad, setInitialLoad] = useState(true);
+  const observerRef = useRef();
+  const loadingRef = useRef();
 
   useEffect(() => {
+    // Reset when filters change
+    if (!initialLoad) {
+      setWorksheets([]);
+      setPage(1);
+      setHasMore(true);
+    }
     fetchWorksheets();
-  }, [page, filterGrade, filterStatus, sortBy]);
+  }, [filterGrade, filterStatus, sortBy]);
 
-  const fetchWorksheets = async () => {
+  useEffect(() => {
+    if (page > 1) {
+      fetchWorksheets(true);
+    }
+  }, [page]);
+
+  // Set up intersection observer for infinite scroll
+  const lastWorksheetElementRef = useCallback(node => {
+    if (loading) return;
+    if (observerRef.current) observerRef.current.disconnect();
+    
+    observerRef.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        setPage(prevPage => prevPage + 1);
+      }
+    });
+    
+    if (node) observerRef.current.observe(node);
+  }, [loading, hasMore]);
+
+  const fetchWorksheets = async (append = false) => {
     setLoading(true);
     try {
       const params = new URLSearchParams({
-        page,
+        page: append ? page : 1,
         limit: 10,
         sortBy,
         order: 'desc'
@@ -54,8 +84,16 @@ function Worksheets() {
       if (filterStatus !== 'all') params.append('status', filterStatus);
 
       const response = await api.get(`/worksheets?${params}`);
-      setWorksheets(response.data.worksheets);
+      
+      if (append) {
+        setWorksheets(prev => [...prev, ...response.data.worksheets]);
+      } else {
+        setWorksheets(response.data.worksheets);
+      }
+      
       setTotalPages(response.data.pagination.pages);
+      setHasMore(response.data.pagination.page < response.data.pagination.pages);
+      setInitialLoad(false);
     } catch (error) {
       console.error('Error fetching worksheets:', error);
     } finally {
@@ -121,7 +159,7 @@ function Worksheets() {
     });
   };
 
-  if (loading && worksheets.length === 0) {
+  if (loading && worksheets.length === 0 && initialLoad) {
     return (
       <Layout>
         <div className="flex items-center justify-center h-64">
@@ -308,8 +346,12 @@ function Worksheets() {
                   </tr>
                 </thead>
                 <tbody className={`divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
-                  {filteredWorksheets.map((worksheet) => (
-                    <tr key={worksheet._id} className={`${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'}`}>
+                  {filteredWorksheets.map((worksheet, index) => (
+                    <tr 
+                      key={worksheet._id} 
+                      ref={index === filteredWorksheets.length - 1 ? lastWorksheetElementRef : null}
+                      className={`${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'}`}
+                    >
                       <td className="px-6 py-4 whitespace-nowrap">
                         {getStatusIcon(worksheet.status)}
                       </td>
@@ -408,44 +450,37 @@ function Worksheets() {
                       </td>
                     </tr>
                   ))}
+                  {loading && !initialLoad && (
+                    <tr>
+                      <td colSpan="9" className="px-6 py-4 text-center">
+                        <div className="flex items-center justify-center">
+                          <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                          <span className={`ml-2 ${darkMode.textSecondary}`}>Loading more worksheets...</span>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
           )}
         </div>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex justify-center space-x-2">
+        {/* Load More Button (as fallback for users who prefer manual loading) */}
+        {!loading && hasMore && (
+          <div className="flex justify-center mt-6">
             <button
-              onClick={() => setPage(Math.max(1, page - 1))}
-              disabled={page === 1}
-              className={`px-4 py-2 border rounded-lg disabled:opacity-50 ${isDarkMode ? 'bg-gray-800 border-gray-700 text-white hover:bg-gray-700' : 'bg-white border-gray-300 hover:bg-gray-50'}`}
+              onClick={() => setPage(prev => prev + 1)}
+              className="px-6 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 font-medium"
             >
-              Previous
+              Load More Worksheets
             </button>
-            
-            {[...Array(totalPages)].map((_, i) => (
-              <button
-                key={i + 1}
-                onClick={() => setPage(i + 1)}
-                className={`px-4 py-2 rounded-lg ${
-                  page === i + 1
-                    ? 'bg-purple-500 text-white'
-                    : `border ${isDarkMode ? 'bg-gray-800 border-gray-700 text-white hover:bg-gray-700' : 'bg-white border-gray-300 hover:bg-gray-50'}`
-                }`}
-              >
-                {i + 1}
-              </button>
-            ))}
-            
-            <button
-              onClick={() => setPage(Math.min(totalPages, page + 1))}
-              disabled={page === totalPages}
-              className={`px-4 py-2 border rounded-lg disabled:opacity-50 ${isDarkMode ? 'bg-gray-800 border-gray-700 text-white hover:bg-gray-700' : 'bg-white border-gray-300 hover:bg-gray-50'}`}
-            >
-              Next
-            </button>
+          </div>
+        )}
+        
+        {!hasMore && worksheets.length > 0 && (
+          <div className="text-center mt-6">
+            <p className={`${darkMode.textSecondary}`}>You've reached the end of your worksheets</p>
           </div>
         )}
       </div>

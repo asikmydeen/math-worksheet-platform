@@ -140,6 +140,26 @@ const worksheetSchema = new mongoose.Schema({
   timestamps: true
 });
 
+// Indexes for performance optimization
+worksheetSchema.index({ user: 1, createdAt: -1 });
+worksheetSchema.index({ user: 1, status: 1, createdAt: -1 });
+worksheetSchema.index({ user: 1, kidProfile: 1, createdAt: -1 });
+worksheetSchema.index({ user: 1, grade: 1, createdAt: -1 });
+worksheetSchema.index({ user: 1, subject: 1, createdAt: -1 });
+worksheetSchema.index({ user: 1, score: -1 });
+worksheetSchema.index({ user: 1, completedAt: -1 });
+worksheetSchema.index({ createdAt: -1 }); // For sorting by newest
+worksheetSchema.index({ user: 1, _id: -1 }); // For cursor-based pagination
+
+// Compound index for common query patterns
+worksheetSchema.index({ 
+  user: 1, 
+  kidProfile: 1, 
+  status: 1, 
+  grade: 1, 
+  createdAt: -1 
+});
+
 // Method to calculate score
 worksheetSchema.methods.calculateScore = function() {
   const totalProblems = this.problems.length;

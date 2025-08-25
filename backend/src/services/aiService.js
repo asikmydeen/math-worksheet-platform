@@ -4,6 +4,8 @@ const LLMSettings = require('../models/LLMSettings');
 class AIService {
   static openRouterClient = null;
   static currentSettings = null;
+  static responseFormatCache = new Map(); // Cache successful response formats per model
+  static modelCapabilities = new Map(); // Cache model capabilities
 
   /**
    * Initialize or get OpenRouter client with current settings
@@ -50,6 +52,84 @@ class AIService {
            this.currentSettings.updatedAt.getTime() !== newSettings.updatedAt.getTime();
   }
 
+  static calculateProblemQuality({ question, options, explanation, grade, subject }) {
+    let score = 0;
+    let factors = 0;
+    
+    // Question length and clarity (0-0.25)
+    if (question && question.length > 20) {
+      score += 0.15;
+      factors++;
+    }
+    if (question && question.length > 50) {
+      score += 0.10;
+      factors++;
+    }
+    
+    // Options quality (0-0.25)
+    if (options && options.length >= 4) {
+      score += 0.15;
+      factors++;
+    }
+    // Check for unique options
+    const uniqueOptions = new Set(options);
+    if (uniqueOptions.size === options.length) {
+      score += 0.10;
+      factors++;
+    }
+    
+    // Explanation quality (0-0.25)
+    if (explanation && explanation.length > 10 && explanation !== 'No explanation provided') {
+      score += 0.15;
+      factors++;
+    }
+    if (explanation && explanation.length > 30) {
+      score += 0.10;
+      factors++;
+    }
+    
+    // Grade appropriateness (0-0.25)
+    // Basic check - can be enhanced with more sophisticated analysis
+    const gradeKeywords = {
+      'K': ['count', 'color', 'shape', 'add', 'subtract'],
+      '1': ['add', 'subtract', 'count', 'compare'],
+      '2': ['add', 'subtract', 'multiply', 'measure'],
+      '3': ['multiply', 'divide', 'fraction', 'area'],
+      '4': ['fraction', 'decimal', 'angle', 'perimeter'],
+      '5': ['decimal', 'percent', 'volume', 'coordinate']
+    };
+    
+    const keywords = gradeKeywords[grade] || [];
+    const questionLower = question?.toLowerCase() || '';
+    if (keywords.some(keyword => questionLower.includes(keyword))) {
+      score += 0.25;
+      factors++;
+    }
+    
+    return factors > 0 ? score : 0.5; // Default to 0.5 if no factors
+  }
+
+  static removeDuplicateProblems(problems) {
+    const seen = new Set();
+    const unique = [];
+    
+    for (const problem of problems) {
+      // Create a normalized key for comparison
+      const questionKey = problem.question.toLowerCase().replace(/\s+/g, ' ').trim();
+      const optionsKey = problem.options.map(o => o.toLowerCase().trim()).sort().join('|');
+      const key = `${questionKey}::${optionsKey}`;
+      
+      if (!seen.has(key)) {
+        seen.add(key);
+        unique.push(problem);
+      } else {
+        console.warn('Duplicate problem detected:', problem.question.substring(0, 50) + '...');
+      }
+    }
+    
+    return unique;
+  }
+
   /**
    * Generate problems based on subject, grade and parameters
    */
@@ -60,6 +140,37 @@ class AIService {
     if (model.includes('llama')) return 'llama';
     if (model.includes('mistral')) return 'mistral';
     return 'unknown';
+  }
+
+  static getModelCapabilities(model) {
+    // Check cache first
+    if (this.modelCapabilities.has(model)) {
+      return this.modelCapabilities.get(model);
+    }
+    
+    const family = this.getModelFamily(model);
+    const capabilities = {
+      supportsJsonMode: false,
+      supportsSystemPrompt: true,
+      maxRetries: 3,
+      preferredFormat: 'text'
+    };
+    
+    // Set capabilities based on model family and specific models
+    if (family === 'gpt' && (model.includes('gpt-4') || model.includes('gpt-3.5-turbo'))) {
+      capabilities.supportsJsonMode = true;
+      capabilities.preferredFormat = 'json';
+    } else if (family === 'claude') {
+      capabilities.supportsJsonMode = false;
+      capabilities.preferredFormat = 'markdown';
+    } else if (family === 'gemini') {
+      capabilities.supportsJsonMode = true;
+      capabilities.preferredFormat = 'json';
+    }
+    
+    // Cache the capabilities
+    this.modelCapabilities.set(model, capabilities);
+    return capabilities;
   }
 
   static parseClaudeResponse(content) {
@@ -90,6 +201,12 @@ class AIService {
   static parseModelResponse(content, model) {
     const modelFamily = this.getModelFamily(model);
     
+    // Check cache for known response format
+    const cachedFormat = this.responseFormatCache.get(model);
+    if (cachedFormat) {
+      console.log(`Using cached response format for ${model}: ${cachedFormat}`);
+    }
+    
     try {
       let parsed;
       switch (modelFamily) {
@@ -106,14 +223,18 @@ class AIService {
           parsed = this.parseAIResponse(content);
       }
       
-      // Normalize response format
+      // Normalize response format and cache successful format
       if (Array.isArray(parsed)) {
+        this.responseFormatCache.set(model, 'array');
         return parsed;
       } else if (parsed.problems && Array.isArray(parsed.problems)) {
+        this.responseFormatCache.set(model, 'object-with-problems');
         return parsed.problems;
       } else if (parsed["0"]) {
+        this.responseFormatCache.set(model, 'numeric-keys');
         return Object.values(parsed);
       } else if (parsed.question) {
+        this.responseFormatCache.set(model, 'single-problem');
         return [parsed];
       }
       
@@ -345,7 +466,10 @@ Return ONLY a valid JSON array with this structure:
 
       console.log(`Generating ${count} ${subject} problems for grade ${grade} using model: ${model}`);
 
-      const response = await client.chat.completions.create({
+      // Get model capabilities
+      const capabilities = this.getModelCapabilities(model);
+      
+      const requestParams = {
         model: model,
         messages: [
           {
@@ -359,9 +483,15 @@ Return ONLY a valid JSON array with this structure:
         ],
         temperature: config.temperature || 0.7,
         max_tokens: config.maxTokens || 2000,
-        top_p: config.topP || 1,
-        response_format: { type: "json_object" }
-      });
+        top_p: config.topP || 1
+      };
+      
+      // Only add response_format if the model supports it
+      if (capabilities.supportsJsonMode) {
+        requestParams.response_format = { type: "json_object" };
+      }
+      
+      const response = await client.chat.completions.create(requestParams);
 
       const content = response.choices[0].message.content;
       console.log('AI Response length:', content.length);
@@ -394,7 +524,7 @@ Return ONLY a valid JSON array with this structure:
         throw new Error('All generated problems failed validation');
       }
 
-      // Ensure all problems have required fields
+      // Ensure all problems have required fields and score quality
       problems = problems.map((problem, index) => {
         const options = problem.options || problem.choices || ['Option A', 'Option B', 'Option C', 'Option D'];
         let correctAnswer = problem.correctAnswer || problem.answer || options[0];
@@ -405,6 +535,15 @@ Return ONLY a valid JSON array with this structure:
           correctAnswer = options[0];
         }
         
+        // Calculate quality score
+        const qualityScore = this.calculateProblemQuality({
+          question: problem.question,
+          options: options,
+          explanation: problem.explanation,
+          grade: grade,
+          subject: subject
+        });
+        
         return {
           question: problem.question || `Problem ${index + 1}`,
           options: options,
@@ -414,9 +553,25 @@ Return ONLY a valid JSON array with this structure:
           explanation: problem.explanation || 'No explanation provided',
           type: problem.type || 'multiple-choice',
           topic: problem.topic || topicList,
-          difficulty: problem.difficulty || difficulty || 'medium'
+          difficulty: problem.difficulty || difficulty || 'medium',
+          qualityScore: qualityScore
         };
       });
+      
+      // Remove duplicates
+      problems = this.removeDuplicateProblems(problems);
+      
+      // Sort by quality score and log any low-quality problems
+      problems.sort((a, b) => b.qualityScore - a.qualityScore);
+      const lowQualityProblems = problems.filter(p => p.qualityScore < 0.5);
+      if (lowQualityProblems.length > 0) {
+        console.warn(`${lowQualityProblems.length} problems have low quality scores`);
+      }
+      
+      // Ensure we have enough problems after filtering
+      if (problems.length < count * 0.7) {
+        console.warn(`Only ${problems.length} problems remaining after quality filtering (requested ${count})`);
+      }
 
       const title = `${subject} Worksheet - Grade ${grade}`;
       return { 

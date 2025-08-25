@@ -3,6 +3,7 @@ import api from '../services/api';
 import { X, BookOpen, Sparkles, Loader } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useDarkModeClasses } from './DarkModeWrapper';
+import WorksheetPreview from './WorksheetPreview';
 
 function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
   const { isDarkMode } = useTheme();
@@ -10,15 +11,50 @@ function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
   const [mode, setMode] = useState('standard');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [formData, setFormData] = useState({
-    subject: 'Math',
-    grade: userGrade || '5',
-    problemCount: 10,
-    topics: [],
-    difficulty: 'medium',
-    title: '',
-    naturalLanguageRequest: ''
+  const [draftSaved, setDraftSaved] = useState(false);
+  const [previewData, setPreviewData] = useState(null);
+  const [showPreview, setShowPreview] = useState(false);
+  
+  // Load draft from localStorage
+  const loadDraft = () => {
+    const savedDraft = localStorage.getItem('worksheetDraft');
+    if (savedDraft) {
+      try {
+        const parsed = JSON.parse(savedDraft);
+        return {
+          ...parsed,
+          topics: parsed.topics || []
+        };
+      } catch (e) {
+        console.error('Failed to load draft:', e);
+      }
+    }
+    return null;
+  };
+  
+  const [formData, setFormData] = useState(() => {
+    const draft = loadDraft();
+    return draft || {
+      subject: 'Math',
+      grade: userGrade || '5',
+      problemCount: 10,
+      topics: [],
+      difficulty: 'medium',
+      title: '',
+      naturalLanguageRequest: ''
+    };
   });
+  
+  // Auto-save draft
+  React.useEffect(() => {
+    const saveTimer = setTimeout(() => {
+      localStorage.setItem('worksheetDraft', JSON.stringify(formData));
+      setDraftSaved(true);
+      setTimeout(() => setDraftSaved(false), 2000);
+    }, 1000);
+    
+    return () => clearTimeout(saveTimer);
+  }, [formData]);
 
   const subjects = [
     'Math', 'Science', 'English', 'History', 'Geography', 
@@ -56,29 +92,103 @@ function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
     setLoading(true);
 
     try {
-      const response = await api.post('/worksheets/generate', formData);
+      // First, generate the problems but don't save yet
+      const response = await api.post('/worksheets/generate-preview', formData);
       
       if (response.data.success) {
-        onGenerate(response.data.worksheet);
-        onClose();
+        // Show preview instead of immediately creating
+        setPreviewData(response.data.preview);
+        setShowPreview(true);
       }
     } catch (err) {
-      if (err.response?.data?.requiresSubscription) {
-        // Redirect to pricing page
-        window.location.href = '/#pricing';
+      // If preview endpoint doesn't exist, fall back to direct generation
+      if (err.response?.status === 404) {
+        try {
+          const response = await api.post('/worksheets/generate', formData);
+          if (response.data.success) {
+            localStorage.removeItem('worksheetDraft');
+            onGenerate(response.data.worksheet);
+            onClose();
+          }
+        } catch (fallbackErr) {
+          handleGenerateError(fallbackErr);
+        }
       } else {
-        setError(err.response?.data?.message || 'Failed to generate worksheet');
+        handleGenerateError(err);
       }
     } finally {
       setLoading(false);
     }
   };
 
+  const handleGenerateError = (err) => {
+    if (err.response?.data?.requiresSubscription) {
+      window.location.href = '/#pricing';
+    } else {
+      setError(err.response?.data?.message || 'Failed to generate worksheet');
+    }
+  };
+
+  const handlePreviewConfirm = async (finalWorksheet) => {
+    setLoading(true);
+    try {
+      const response = await api.post('/worksheets/create-from-preview', finalWorksheet);
+      if (response.data.success) {
+        localStorage.removeItem('worksheetDraft');
+        onGenerate(response.data.worksheet);
+        onClose();
+      }
+    } catch (err) {
+      // Fall back to regular generation if preview endpoints don't exist
+      if (err.response?.status === 404) {
+        try {
+          const response = await api.post('/worksheets/generate', { ...formData, title: finalWorksheet.title });
+          if (response.data.success) {
+            localStorage.removeItem('worksheetDraft');
+            onGenerate(response.data.worksheet);
+            onClose();
+          }
+        } catch (fallbackErr) {
+          handleGenerateError(fallbackErr);
+        }
+      } else {
+        handleGenerateError(err);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRegenerate = async (problemIndices) => {
+    // This would regenerate specific problems
+    // For now, just regenerate the whole worksheet
+    setShowPreview(false);
+    handleGenerate();
+  };
+  
+  const handleClearDraft = () => {
+    localStorage.removeItem('worksheetDraft');
+    setFormData({
+      subject: 'Math',
+      grade: userGrade || '5',
+      problemCount: 10,
+      topics: [],
+      difficulty: 'medium',
+      title: '',
+      naturalLanguageRequest: ''
+    });
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className={`${darkMode.card} rounded-2xl shadow-2xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto`}>
         <div className="flex justify-between items-center mb-6">
-          <h2 className={`text-2xl font-bold ${darkMode.text}`}>Generate New Worksheet</h2>
+          <div className="flex items-center gap-3">
+            <h2 className={`text-2xl font-bold ${darkMode.text}`}>Generate New Worksheet</h2>
+            {draftSaved && (
+              <span className="text-sm text-green-500 animate-fade-in">Draft saved</span>
+            )}
+          </div>
           <button onClick={onClose} className={`p-2 ${darkMode.cardHover} rounded-lg`}>
             <X className="w-5 h-5" />
           </button>
@@ -310,6 +420,23 @@ function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
           </button>
         </div>
       </div>
+
+      {/* Worksheet Preview Modal */}
+      {showPreview && previewData && (
+        <WorksheetPreview
+          worksheet={previewData}
+          onConfirm={handlePreviewConfirm}
+          onCancel={() => {
+            setShowPreview(false);
+            setPreviewData(null);
+          }}
+          onRegenerate={handleRegenerate}
+          onEdit={() => {
+            // Future: Implement problem editing
+            setShowPreview(false);
+          }}
+        />
+      )}
     </div>
   );
 }
