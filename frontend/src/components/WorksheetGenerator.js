@@ -178,13 +178,15 @@ function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
   };
 
   const handleGenerateError = (err) => {
-    if (err.response?.status === 429) {
-      // Rate limiting error
-      const retryAfter = err.response.headers['retry-after'];
-      const waitTime = retryAfter ? parseInt(retryAfter) : 60;
-      setError(`Too many requests. Please wait ${waitTime} seconds before trying again.`);
-    } else if (err.response?.data?.requiresSubscription) {
-      window.location.href = '/#pricing';
+    if (err.response?.data?.requiresSubscription) {
+      // Subscription limit reached
+      setError('You have reached your worksheet limit. Please upgrade your subscription for more worksheets.');
+      setTimeout(() => {
+        window.location.href = '/#pricing';
+      }, 3000);
+    } else if (err.response?.status === 429) {
+      // This should not happen now, but keeping as fallback
+      setError('Too many requests. Please try again later.');
     } else {
       setError(err.response?.data?.message || 'Failed to generate worksheet');
     }
@@ -263,11 +265,15 @@ function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
         )}
 
         {/* AI Requests Info */}
-        {user && (
+        {user && user.subscription?.plan !== 'lifetime' && (
           <div className={`mb-4 p-3 ${isDarkMode ? 'bg-blue-900/20 border-blue-800 text-blue-400' : 'bg-blue-100 border-blue-300 text-blue-700'} rounded-lg flex items-center gap-2`}>
             <Info className="w-5 h-5 shrink-0" />
             <span className="text-sm">
-              AI Requests: {user.subscription?.aiRequestsUsed || 0} / {user.subscription?.aiRequestsLimit || 10} used this hour
+              AI Worksheets Generated: {user.subscription?.aiRequestsUsed || 0} / {
+                user.subscription?.aiRequestsLimit === -1 
+                  ? 'Unlimited' 
+                  : (user.subscription?.aiRequestsLimit || 10)
+              }
               {user.subscription?.plan === 'free' && ' (Upgrade for more)'}
             </span>
           </div>

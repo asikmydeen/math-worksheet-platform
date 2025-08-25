@@ -17,18 +17,17 @@ const {
 } = require('../controllers/worksheetStreamController');
 const { protect } = require('../middleware/authMiddleware');
 const { 
-  aiGenerationLimiter,
   worksheetSubmissionLimiter 
 } = require('../middleware/rateLimitMiddleware');
 
 // All routes require authentication
 router.use(protect);
 
-// Apply AI generation rate limiting to generation endpoints
-router.post('/generate', aiGenerationLimiter, generateWorksheet);
-router.post('/generate-preview', aiGenerationLimiter, generateWorksheetPreview);
+// Generation endpoints (subscription limits are checked in the controllers)
+router.post('/generate', generateWorksheet);
+router.post('/generate-preview', generateWorksheetPreview);
 router.post('/create-from-preview', createWorksheetFromPreview);
-router.post('/generate-stream', aiGenerationLimiter, generateWorksheetStream);
+router.post('/generate-stream', generateWorksheetStream);
 router.get('/generation-stats', getGenerationProgress);
 router.get('/adaptive-difficulty', getAdaptiveDifficulty);
 router.get('/queue-status', getQueueStatus);

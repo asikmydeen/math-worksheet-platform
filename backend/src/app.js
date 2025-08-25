@@ -6,7 +6,6 @@ const session = require('express-session');
 const passport = require('./config/passport');
 const { 
   generalLimiter, 
-  aiGenerationLimiter, 
   authLimiter,
   worksheetSubmissionLimiter 
 } = require('./middleware/rateLimitMiddleware');
