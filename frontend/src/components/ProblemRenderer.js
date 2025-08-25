@@ -6,14 +6,14 @@ import { CheckCircle, XCircle } from 'lucide-react';
 function ProblemRenderer({ problem, index, onAnswer, showResult, isReview }) {
   const { isDarkMode } = useTheme();
   const darkMode = useDarkModeClasses();
-  const [userAnswer, setUserAnswer] = useState(problem.userAnswer || '');
+  const [userAnswer, setUserAnswer] = useState('');
   const [matchingAnswers, setMatchingAnswers] = useState({});
 
   // Reset state when problem changes
   useEffect(() => {
-    setUserAnswer(problem.userAnswer || '');
+    setUserAnswer('');
     setMatchingAnswers({});
-  }, [problem, index]);
+  }, [problem.question, index]);
 
   const handleAnswer = (answer) => {
     setUserAnswer(answer);
@@ -290,7 +290,9 @@ function ProblemRenderer({ problem, index, onAnswer, showResult, isReview }) {
         )}
       </div>
 
-      <p className={`text-lg ${darkMode.text} mb-4`}>{problem.question}</p>
+      {problem.type !== 'fill-in-blank' && (
+        <p className={`text-lg ${darkMode.text} mb-4`}>{problem.question}</p>
+      )}
 
       {problem.type === 'multiple-choice' && renderMultipleChoice()}
       {problem.type === 'fill-in-blank' && renderFillInBlank()}

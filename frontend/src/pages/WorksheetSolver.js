@@ -251,10 +251,7 @@ function WorksheetSolver() {
               
               <ProblemRenderer
                 key={`problem-${currentProblem}`}
-                problem={{
-                  ...worksheet.problems[currentProblem],
-                  userAnswer: answers[currentProblem]
-                }}
+                problem={worksheet.problems[currentProblem]}
                 index={currentProblem}
                 onAnswer={(answer) => handleAnswerChange(currentProblem, answer)}
                 showResult={false}

@@ -588,7 +588,7 @@ IMPORTANT: For multiple-choice, use "choices" array and ensure "answer" matches 
           }
         ],
         temperature: config.temperature || 0.7,
-        max_tokens: config.maxTokens || 2000,
+        max_tokens: config.maxTokens || (count >= 20 ? 4000 : 2000),
         top_p: config.topP || 1
       };
       
