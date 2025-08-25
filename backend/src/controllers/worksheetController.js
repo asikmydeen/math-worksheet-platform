@@ -32,8 +32,8 @@ exports.generateWorksheet = async (req, res) => {
     // Use active kid profile's grade if not specified and profile exists
     const worksheetGrade = grade || (user.activeKidProfile ? user.activeKidProfile.grade : user.grade || '5');
 
-    // Generate problems using AI
-    const aiResponse = await AIService.generateProblems({
+    // Generate problems using AI with retry logic
+    const aiResponse = await AIService.generateProblemsWithRetry({
       subject,
       grade: worksheetGrade,
       count: problemCount,

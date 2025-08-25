@@ -53,8 +53,81 @@ class AIService {
   /**
    * Generate problems based on subject, grade and parameters
    */
+  static getModelFamily(model) {
+    if (model.includes('claude')) return 'claude';
+    if (model.includes('gemini')) return 'gemini';
+    if (model.includes('gpt')) return 'gpt';
+    if (model.includes('llama')) return 'llama';
+    if (model.includes('mistral')) return 'mistral';
+    return 'unknown';
+  }
+
+  static parseClaudeResponse(content) {
+    // Claude often returns markdown-wrapped JSON
+    content = content.trim();
+    if (content.startsWith('```')) {
+      content = content.replace(/^```(?:json)?\s*\n?/, '');
+      content = content.replace(/\n?```\s*$/, '');
+    }
+    return JSON.parse(content);
+  }
+
+  static parseGeminiResponse(content) {
+    // Gemini sometimes adds extra text before/after JSON
+    content = content.trim();
+    const jsonMatch = content.match(/\[[\s\S]*\]|\{[\s\S]*\}/);
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0]);
+    }
+    throw new Error('No valid JSON found in Gemini response');
+  }
+
+  static parseGPTResponse(content) {
+    // GPT models usually return clean JSON
+    return JSON.parse(content.trim());
+  }
+
+  static parseModelResponse(content, model) {
+    const modelFamily = this.getModelFamily(model);
+    
+    try {
+      let parsed;
+      switch (modelFamily) {
+        case 'claude':
+          parsed = this.parseClaudeResponse(content);
+          break;
+        case 'gemini':
+          parsed = this.parseGeminiResponse(content);
+          break;
+        case 'gpt':
+          parsed = this.parseGPTResponse(content);
+          break;
+        default:
+          parsed = this.parseAIResponse(content);
+      }
+      
+      // Normalize response format
+      if (Array.isArray(parsed)) {
+        return parsed;
+      } else if (parsed.problems && Array.isArray(parsed.problems)) {
+        return parsed.problems;
+      } else if (parsed["0"]) {
+        return Object.values(parsed);
+      } else if (parsed.question) {
+        return [parsed];
+      }
+      
+      console.error('Unexpected response format from', model, ':', parsed);
+      return [];
+    } catch (error) {
+      console.error(`Failed to parse ${modelFamily} response:`, error.message);
+      // Fallback to generic parser
+      return this.parseAIResponse(content);
+    }
+  }
+
   static parseAIResponse(content) {
-    // Remove any leading/trailing whitespace
+    // Generic parser for unknown models
     content = content.trim();
     
     // Debug log for different models
@@ -64,7 +137,6 @@ class AIService {
     
     // Check if content is wrapped in markdown code blocks
     if (content.startsWith('```')) {
-      // Remove markdown code blocks
       content = content.replace(/^```(?:json)?\s*\n?/, '');
       content = content.replace(/\n?```\s*$/, '');
       content = content.trim();
@@ -93,6 +165,71 @@ class AIService {
       console.error('Content preview:', content.substring(0, 200));
       throw new Error('Invalid JSON response from AI');
     }
+  }
+
+  static async generateProblemsWithRetry(params, maxRetries = 3) {
+    let lastError;
+    const delays = [1000, 2000, 4000]; // Exponential backoff delays
+    
+    // Define fallback models
+    const fallbackModels = [
+      'openai/gpt-4o-mini',
+      'openai/gpt-3.5-turbo',
+      'anthropic/claude-3-haiku',
+      'google/gemini-flash-1.5-8b',
+      'meta-llama/llama-3.2-3b-instruct:free'
+    ];
+    
+    const originalModel = this.currentSettings?.selectedModel || fallbackModels[0];
+    let modelIndex = fallbackModels.indexOf(originalModel);
+    if (modelIndex === -1) modelIndex = 0;
+    
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        // Try with fallback model if previous attempts failed
+        if (attempt > 0 && modelIndex < fallbackModels.length - 1) {
+          modelIndex++;
+          const fallbackModel = fallbackModels[modelIndex];
+          console.log(`Attempting with fallback model: ${fallbackModel}`);
+          
+          // Temporarily override the model
+          const originalSettings = this.currentSettings;
+          this.currentSettings = {
+            ...originalSettings,
+            selectedModel: fallbackModel
+          };
+          
+          const result = await this.generateProblems(params);
+          
+          // Restore original settings
+          this.currentSettings = originalSettings;
+          
+          return result;
+        } else {
+          console.log(`Attempt ${attempt + 1} of ${maxRetries} for problem generation`);
+          return await this.generateProblems(params);
+        }
+      } catch (error) {
+        lastError = error;
+        console.error(`Attempt ${attempt + 1} failed:`, error.message);
+        
+        // Don't retry on certain errors
+        if (error.message?.includes('subscription') || 
+            error.message?.includes('API key') ||
+            error.response?.status === 401 ||
+            error.response?.status === 403) {
+          throw error;
+        }
+        
+        if (attempt < maxRetries - 1) {
+          const delay = delays[attempt] || 5000;
+          console.log(`Retrying in ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+    }
+    
+    throw new Error(`Failed after ${maxRetries} attempts: ${lastError.message}`);
   }
 
   static async generateProblems({ subject, grade, count = 10, topics, difficulty, customRequest }) {
@@ -229,7 +366,7 @@ Return ONLY a valid JSON array with this structure:
       const content = response.choices[0].message.content;
       console.log('AI Response length:', content.length);
       
-      let problems = this.parseAIResponse(content);
+      let problems = this.parseModelResponse(content, model);
       
       if (response.usage) {
         console.log(`Token usage - Prompt: ${response.usage.prompt_tokens}, Completion: ${response.usage.completion_tokens}, Total: ${response.usage.total_tokens}`);
@@ -240,18 +377,46 @@ Return ONLY a valid JSON array with this structure:
         throw new Error('No problems generated');
       }
 
+      // Validate each problem
+      problems = problems.filter(problem => {
+        if (!problem.question) {
+          console.warn('Problem missing question:', problem);
+          return false;
+        }
+        if (!problem.options && !problem.choices) {
+          console.warn('Problem missing options/choices:', problem);
+          return false;
+        }
+        return true;
+      });
+
+      if (problems.length === 0) {
+        throw new Error('All generated problems failed validation');
+      }
+
       // Ensure all problems have required fields
-      problems = problems.map((problem, index) => ({
-        question: problem.question || `Problem ${index + 1}`,
-        options: problem.options || problem.choices || ['Option A', 'Option B', 'Option C', 'Option D'],
-        choices: problem.choices || problem.options || ['Option A', 'Option B', 'Option C', 'Option D'],
-        correctAnswer: problem.correctAnswer || problem.answer || 'Option A',
-        answer: problem.answer || problem.correctAnswer || 'Option A',
-        explanation: problem.explanation || 'No explanation provided',
-        type: problem.type || 'multiple-choice',
-        topic: problem.topic || subject,
-        difficulty: problem.difficulty || difficulty || 'medium'
-      }));
+      problems = problems.map((problem, index) => {
+        const options = problem.options || problem.choices || ['Option A', 'Option B', 'Option C', 'Option D'];
+        let correctAnswer = problem.correctAnswer || problem.answer || options[0];
+        
+        // Ensure correctAnswer is in options
+        if (!options.includes(correctAnswer)) {
+          console.warn(`Correct answer "${correctAnswer}" not in options for problem ${index + 1}, using first option`);
+          correctAnswer = options[0];
+        }
+        
+        return {
+          question: problem.question || `Problem ${index + 1}`,
+          options: options,
+          choices: options,
+          correctAnswer: correctAnswer,
+          answer: correctAnswer,
+          explanation: problem.explanation || 'No explanation provided',
+          type: problem.type || 'multiple-choice',
+          topic: problem.topic || topicList,
+          difficulty: problem.difficulty || difficulty || 'medium'
+        };
+      });
 
       const title = `${subject} Worksheet - Grade ${grade}`;
       return { 
