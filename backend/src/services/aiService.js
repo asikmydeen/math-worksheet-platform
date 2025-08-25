@@ -392,10 +392,11 @@ class AIService {
     
     // Define fallback models
     const fallbackModels = [
+      'google/gemini-2.0-flash-exp',
+      'google/gemini-1.5-flash',
       'openai/gpt-4o-mini',
       'openai/gpt-3.5-turbo',
       'anthropic/claude-3-haiku',
-      'google/gemini-1.5-flash',
       'meta-llama/llama-3.2-3b-instruct:free'
     ];
     
@@ -640,13 +641,39 @@ IMPORTANT: For multiple-choice, use "choices" array and ensure "answer" matches 
       };
       
       // Only add response_format if the model supports it
-      if (capabilities.supportsJsonMode) {
+      // Note: Some gemini models may not work well with json_object format
+      if (capabilities.supportsJsonMode && !model.includes('gemini-2.5-pro')) {
         requestParams.response_format = { type: "json_object" };
       }
       
       // Queue the request
-      const response = await aiQueueService.addToQueue({
-        execute: async () => client.chat.completions.create(requestParams)
+      console.log('Sending request to OpenRouter with params:', JSON.stringify({
+        model: requestParams.model,
+        messageCount: requestParams.messages.length,
+        maxTokens: requestParams.max_tokens,
+        hasJsonMode: !!requestParams.response_format
+      }));
+      
+      let response;
+      try {
+        response = await aiQueueService.addToQueue({
+          execute: async () => client.chat.completions.create(requestParams)
+        });
+      } catch (apiError) {
+        console.error('OpenRouter API error:', {
+          model: model,
+          error: apiError.message,
+          status: apiError.response?.status,
+          data: apiError.response?.data
+        });
+        throw apiError;
+      }
+
+      console.log('OpenRouter response:', {
+        id: response.id,
+        model: response.model,
+        choices: response.choices?.length,
+        usage: response.usage
       });
 
       const content = response.choices[0]?.message?.content || '';
