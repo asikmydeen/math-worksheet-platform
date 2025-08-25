@@ -122,14 +122,29 @@ class AIService {
   }
 
   static removeDuplicateProblems(problems) {
+    if (!problems || !Array.isArray(problems)) {
+      return [];
+    }
+
     const seen = new Set();
     const unique = [];
     
     for (const problem of problems) {
+      if (!problem || !problem.question) {
+        continue;
+      }
+
       // Create a normalized key for comparison
       const questionKey = problem.question.toLowerCase().replace(/\s+/g, ' ').trim();
-      const optionsKey = problem.options.map(o => o.toLowerCase().trim()).sort().join('|');
-      const key = `${questionKey}::${optionsKey}`;
+      
+      // Handle different problem types
+      let key = questionKey;
+      if (problem.options && Array.isArray(problem.options)) {
+        const optionsKey = problem.options.map(o => String(o).toLowerCase().trim()).sort().join('|');
+        key = `${questionKey}::${optionsKey}`;
+      } else if (problem.answer) {
+        key = `${questionKey}::${String(problem.answer).toLowerCase().trim()}`;
+      }
       
       if (!seen.has(key)) {
         seen.add(key);
@@ -708,11 +723,11 @@ IMPORTANT: For multiple-choice, use "choices" array and ensure "answer" matches 
         
         // Calculate quality score
         const qualityScore = this.calculateProblemQuality({
-          question: problem.question,
-          options: finalProblem.options,
+          question: finalProblem.question,
+          options: finalProblem.choices || finalProblem.options,
           answer: finalProblem.answer,
           type: type,
-          explanation: problem.explanation,
+          explanation: finalProblem.explanation,
           grade: grade,
           subject: subject
         });
@@ -720,6 +735,12 @@ IMPORTANT: For multiple-choice, use "choices" array and ensure "answer" matches 
         finalProblem.qualityScore = qualityScore;
         return finalProblem;
       });
+      
+      // Ensure problems is still an array after mapping
+      if (!Array.isArray(problems)) {
+        console.error('Problems became non-array after mapping:', problems);
+        throw new Error('Problem generation failed during mapping');
+      }
       
       // Remove duplicates
       problems = this.removeDuplicateProblems(problems);
