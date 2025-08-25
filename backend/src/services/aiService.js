@@ -55,7 +55,7 @@ class AIService {
            this.currentSettings.updatedAt.getTime() !== newSettings.updatedAt.getTime();
   }
 
-  static calculateProblemQuality({ question, options, explanation, grade, subject }) {
+  static calculateProblemQuality({ question, options, answer, type, explanation, grade, subject }) {
     let score = 0;
     let factors = 0;
     
@@ -69,15 +69,24 @@ class AIService {
       factors++;
     }
     
-    // Options quality (0-0.25)
-    if (options && options.length >= 4) {
-      score += 0.15;
-      factors++;
-    }
-    // Check for unique options
-    const uniqueOptions = new Set(options);
-    if (uniqueOptions.size === options.length) {
-      score += 0.10;
+    // For multiple choice problems, check options quality
+    if (type === 'multiple-choice' && options) {
+      // Options quality (0-0.25)
+      if (options.length >= 4) {
+        score += 0.15;
+        factors++;
+      }
+      // Check for unique options
+      if (options.length > 0) {
+        const uniqueOptions = new Set(options);
+        if (uniqueOptions.size === options.length) {
+          score += 0.10;
+          factors++;
+        }
+      }
+    } else if (answer) {
+      // For other problem types, check if answer exists
+      score += 0.25;
       factors++;
     }
     
@@ -700,6 +709,7 @@ IMPORTANT: For multiple-choice, use "choices" array and ensure "answer" matches 
         // Calculate quality score
         const qualityScore = this.calculateProblemQuality({
           question: problem.question,
+          options: finalProblem.options,
           answer: finalProblem.answer,
           type: type,
           explanation: problem.explanation,

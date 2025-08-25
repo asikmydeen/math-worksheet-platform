@@ -43,9 +43,11 @@ const logger = require('./utils/logger');
 // Logging middleware
 app.use(morgan('combined', { stream: logger.stream }));
 
-// Body parser middleware - Skip for webhook endpoint
+// Body parser middleware - Skip for webhook endpoints
 app.use((req, res, next) => {
-  if (req.originalUrl === '/api/payments/webhook') {
+  if (req.originalUrl === '/api/payments/webhook' || 
+      req.originalUrl === '/api/webhooks/stripe' ||
+      req.originalUrl === '/api/payments/webhooks/stripe') {
     next();
   } else {
     express.json({ limit: '10mb' })(req, res, next);
@@ -77,6 +79,12 @@ app.get('/health', (req, res) => {
     uptime: process.uptime()
   });
 });
+
+// Stripe webhook (must be before body parsing middleware for raw body)
+if (process.env.STRIPE_SECRET_KEY) {
+  const paymentController = require('./controllers/paymentController');
+  app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), paymentController.handleWebhook);
+}
 
 // API routes with specific rate limiting
 app.use('/api/auth', authLimiter, authRoutes);

@@ -6,8 +6,9 @@ const { protect } = require('../middleware/authMiddleware');
 if (process.env.STRIPE_SECRET_KEY) {
   const paymentController = require('../controllers/paymentController');
   
-  // Protect all routes except webhook
+  // Protect all routes except webhooks
   router.post('/webhook', express.raw({ type: 'application/json' }), paymentController.handleWebhook);
+  router.post('/webhooks/stripe', express.raw({ type: 'application/json' }), paymentController.handleWebhook);
   
   // Protected routes
   router.use(protect);
