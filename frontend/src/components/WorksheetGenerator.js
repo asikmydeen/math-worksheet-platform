@@ -37,7 +37,7 @@ function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
   
   const [formData, setFormData] = useState(() => {
     const draft = loadDraft();
-    return draft || {
+    const defaultFormData = {
       subject: 'Math',
       grade: userGrade || '5',
       problemCount: 10,
@@ -49,6 +49,18 @@ function WorksheetGenerator({ onClose, onGenerate, userGrade }) {
       timerEnabled: false,
       timeLimit: 30
     };
+    
+    // Ensure problemTypes is always an array even if draft is corrupted
+    if (draft) {
+      return {
+        ...defaultFormData,
+        ...draft,
+        topics: Array.isArray(draft.topics) ? draft.topics : [],
+        problemTypes: Array.isArray(draft.problemTypes) ? draft.problemTypes : []
+      };
+    }
+    
+    return defaultFormData;
   });
   
   // Auto-save draft

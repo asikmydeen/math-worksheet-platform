@@ -101,19 +101,37 @@ function Dashboard() {
                 </p>
                 <div className="flex flex-wrap gap-3">
                   <button
-                    onClick={() => paymentService.createCheckoutSession('monthly')}
+                    onClick={async () => {
+                      try {
+                        await paymentService.createCheckoutSession('monthly');
+                      } catch (error) {
+                        alert(error.message || 'Payment system is currently unavailable. Please try again later.');
+                      }
+                    }}
                     className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
                   >
                     Monthly $9.99
                   </button>
                   <button
-                    onClick={() => paymentService.createCheckoutSession('annual')}
+                    onClick={async () => {
+                      try {
+                        await paymentService.createCheckoutSession('annual');
+                      } catch (error) {
+                        alert(error.message || 'Payment system is currently unavailable. Please try again later.');
+                      }
+                    }}
                     className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:shadow-lg transition-all"
                   >
                     Annual $99.99 (Save 17%)
                   </button>
                   <button
-                    onClick={() => paymentService.createCheckoutSession('lifetime')}
+                    onClick={async () => {
+                      try {
+                        await paymentService.createCheckoutSession('lifetime');
+                      } catch (error) {
+                        alert(error.message || 'Payment system is currently unavailable. Please try again later.');
+                      }
+                    }}
                     className="px-4 py-2 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg hover:shadow-lg transition-all"
                   >
                     Lifetime $299.99

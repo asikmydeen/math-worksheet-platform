@@ -168,7 +168,7 @@ function LandingPage() {
       // Stripe will redirect to checkout page
     } catch (error) {
       console.error('Payment error:', error);
-      alert('Failed to initiate payment. Please try again.');
+      alert(error.message || 'Payment system is currently unavailable. Please try again later.');
     } finally {
       setLoadingPlan(null);
     }

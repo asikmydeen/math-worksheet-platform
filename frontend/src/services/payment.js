@@ -2,12 +2,22 @@ import { loadStripe } from '@stripe/stripe-js';
 import api from './api';
 
 // Initialize Stripe (you'll need to add this to your .env file)
-const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
+const stripeKey = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY;
+const stripePromise = stripeKey ? loadStripe(stripeKey) : null;
+
+// Log warning if Stripe key is not configured
+if (!stripeKey && process.env.NODE_ENV === 'development') {
+  console.warn('Stripe publishable key not configured. Payment features will not work.');
+}
 
 export const paymentService = {
   // Create checkout session and redirect to Stripe
   async createCheckoutSession(plan) {
     try {
+      if (!stripePromise) {
+        throw new Error('Payment system is not configured. Please contact support.');
+      }
+
       const response = await api.post('/payments/create-checkout-session', { plan });
       const { sessionId, url } = response.data;
       
